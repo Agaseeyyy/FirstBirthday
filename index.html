@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Birthday Celebration</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50: '#FEF5F7',
+              100: '#FDEBEF',
+              200: '#FADCE3',
+              300: '#F6C8D3',
+              400: '#F0A3B8',
+              500: '#E97D9C',
+              600: '#D35A7D',
+              700: '#B33F61',
+              800: '#8F294C',
+              900: '#72193B',
+            },
+            chocolate: {
+              100: '#F7F0E6',
+              200: '#E9D8C0',
+              300: '#D9BC94',
+              400: '#C8A06B',
+              500: '#B78246',
+              600: '#96682F',
+              700: '#775027',
+              800: '#5A3C20',
+              900: '#402C19',
+            }
+          },
+          fontFamily: {
+            'fancy': ['Pacifico', 'cursive'],
+            'sans': ['Poppins', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'spin-slow': 'spin 8s linear infinite',
+            'bounce-slow': 'bounce 2s infinite',
+            'pulse-slow': 'pulse 3s infinite',
+            'ping-slow': 'ping 3s cubic-bezier(0, 0, 0.2, 1) infinite',
+          },
+          boxShadow: {
+            'candy': '0 5px 15px rgba(247, 103, 180, 0.3)',
+            'neon': '0 0 5px theme("colors.primary.400"), 0 0 20px theme("colors.primary.300")',
+          },
+          backgroundImage: {
+            'confetti-pattern': "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23f7bfd3' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E\")",
+          },
+        }
+      }
+    }
+  </script>
+  
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ===== Animation Keyframes ===== */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(-1deg); }
+      50% { transform: translateY(-15px) rotate(2deg); }
+    }
+    
+    @keyframes swing {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+    
+    @keyframes flame {
+      0%, 100% { 
+        transform: scale(1) rotate(-2deg); 
+        opacity: 0.9; 
+        filter: blur(0.5px);
+      }
+      50% { 
+        transform: scale(1.15) rotate(2deg); 
+        opacity: 1; 
+        filter: blur(1px);
+      }
+    }
+    
+    @keyframes flicker {
+      0% {
+        transform: skewX(5deg) scale(0.95);
+        box-shadow: 
+          0 0 10px rgba(255, 165, 0, 0.2),
+          0 0 20px rgba(255, 165, 0, 0.2),
+          0 0 60px rgba(255, 165, 0, 0.2);
+        opacity: 0.8;
+      }
+      25% {
+        transform: skewX(-3deg) scale(1.05);
+        box-shadow:
+          0 0 10px rgba(255, 165, 0, 0.5),
+          0 0 20px rgba(255, 165, 0, 0.5),
+          0 0 80px rgba(255, 165, 0, 0.5);
+        opacity: 1;
+      }
+      50% {
+        transform: skewX(2deg) scale(1);
+        box-shadow:
+          0 0 10px rgba(255, 165, 0, 0.3),
+          0 0 20px rgba(255, 165, 0, 0.3),
+          0 0 40px rgba(255, 165, 0, 0.3);
+        opacity: 0.9;
+      }
+      75% {
+        transform: skewX(-4deg) scale(1.05);
+        box-shadow:
+          0 0 10px rgba(255, 165, 0, 0.4),
+          0 0 20px rgba(255, 165, 0, 0.4),
+          0 0 60px rgba(255, 165, 0, 0.4);
+        opacity: 0.95;
+      }
+      100% {
+        transform: skewX(1deg) scale(1);
+        box-shadow:
+          0 0 10px rgba(255, 165, 0, 0.5),
+          0 0 20px rgba(255, 165, 0, 0.5),
+          0 0 70px rgba(255, 165, 0, 0.5);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+      }
+      80% {
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+    
+    @keyframes pop-in {
+      0% { 
+        transform: scale(0); 
+        opacity: 0; 
+      }
+      70% { 
+        transform: scale(1.1);
+        opacity: 1;
+      }
+      100% { 
+        transform: scale(1);
+        opacity: 1; 
+      }
+    }
+    
+    @keyframes star-glow {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 255, 0, 0.7)); }
+      50% { filter: drop-shadow(0 0 8px rgba(255, 255, 0, 0.9)); }
+    }
+    
+    /* ===== General Styles ===== */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #fff9f9, #fff2e6);
+      min-height: 100vh;
+    }
+    
+    .gradient-text {
+      background: linear-gradient(45deg, #FF5252, #FF7B7B, #FF9E80);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+      position: relative;
+    }
+    
+    /* ===== Button Styles ===== */
+    .btn-3d {
+      position: relative;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+    
+    .btn-3d:hover {
+      transform: translateY(-3px);
+    }
+    
+    .btn-3d:active {
+      transform: translateY(2px);
+    }
+    
+    .btn-3d::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent 20%, rgba(255, 255, 255, 0.2) 40%, rgba(255, 255, 255, 0.2) 60%, transparent 80%);
+      background-size: 200% auto;
+      background-position: 0% 0%;
+      animation: shine 3s linear infinite;
+      pointer-events: none;
+      border-radius: inherit;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .btn-3d:hover::before {
+      opacity: 1;
+    }
+    
+    @keyframes shine {
+      to {
+        background-position: 200% 0%;
+      }
+    }
+    
+    /* ===== Decorative Elements ===== */
+    .festive-bg {
+      background-image: 
+        radial-gradient(circle at 25% 25%, rgba(255, 182, 193, 0.2) 1%, transparent 8%),
+        radial-gradient(circle at 75% 75%, rgba(173, 216, 230, 0.2) 1%, transparent 8%),
+        linear-gradient(135deg, #f9f2ff 0%, #fff9f5 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .festive-pattern {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3z' fill='%23f9c4d2' fill-opacity='0.2' fill-rule='evenodd'/%3E%3C/svg%3E");
+      opacity: 0.6;
+    }
+    
+    /* ===== Balloon Styles ===== */
+    .balloon-container {
+      position: absolute;
+      z-index: 5;
+      transform-origin: bottom center;
+      animation: float 6s ease-in-out infinite;
+    }
+    
+    .balloon {
+      position: relative;
+      width: 50px;
+      height: 65px;
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+      box-shadow: inset -5px -5px 12px rgba(0, 0, 0, 0.15), 0 5px 15px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+    }
+    
+    .balloon::before {
+      content: '';
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      background: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      top: 10px;
+      left: 10px;
+    }
+    
+    .balloon::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 10px solid;
+      border-top-color: inherit;
+      bottom: -7px;
+      left: 22px;
+    }
+    
+    .balloon-string {
+      position: absolute;
+      width: 1px;
+      height: 80px;
+      background-color: rgba(0, 0, 0, 0.6);
+      bottom: -80px;
+      left: 25px;
+      transform-origin: top;
+      z-index: 9;
+    }
+    
+    .balloon-string::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      top: 0;
+      background-color: rgba(255, 255, 255, 0.3);
+      transform: translateX(1px);
+    }
+    
+    .balloon-red {
+      background: radial-gradient(circle at 20% 20%, #ff6b6b, #c44d4d);
+      border-top-color: #ff6b6b;
+    }
+    
+    .balloon-blue {
+      background: radial-gradient(circle at 20% 20%, #4dabff, #236bac);
+      border-top-color: #4dabff;
+    }
+    
+    .balloon-green {
+      background: radial-gradient(circle at 20% 20%, #4dffb8, #1a9c61);
+      border-top-color: #4dffb8;
+    }
+    
+    .balloon-yellow {
+      background: radial-gradient(circle at 20% 20%, #ffed4d, #d1b325);
+      border-top-color: #ffed4d;
+    }
+    
+    .balloon-purple {
+      background: radial-gradient(circle at 20% 20%, #d14dff, #8e1ad1);
+      border-top-color: #d14dff;
+    }
+    
+    .balloon-pink {
+      background: radial-gradient(circle at 20% 20%, #ff9ed0, #d1569a);
+      border-top-color: #ff9ed0;
+    }
+    
+    /* ===== Cake Styles ===== */
+    .cake {
+      position: relative;
+      width: 250px;
+      height: 200px;
+      margin: 60px auto 40px;
+    }
+    
+    .plate {
+      width: 270px;
+      height: 110px;
+      position: absolute;
+      bottom: -10px;
+      left: -10px;
+      background: radial-gradient(ellipse at center, #f0f0f0 0%, #d4d4d4 80%);
+      border-radius: 50%;
+      box-shadow:
+        0 2px 0 #a6a6a6,
+        0 4px 0 #a6a6a6,
+        0 5px 40px rgba(0, 0, 0, 0.5);
+    }
+    
+    .cake > * {
+      position: absolute;
+    }
+    
+    .layer {
+      position: absolute;
+      display: block;
+      width: 250px;
+      height: 100px;
+      border-radius: 50%;
+      background-color: #553c13;
+      box-shadow:
+        0 2px 0px #5c411a,
+        0 4px 0px #4a3410,
+        0 6px 0px #49330f,
+        0 8px 0px #48320f,
+        0 10px 0px #47310e,
+        0 12px 0px #45300e,
+        0 14px 0px #442f0d,
+        0 16px 0px #432e0d,
+        0 18px 0px #422d0c,
+        0 20px 0px #412c0c,
+        0 22px 0px #3f2b0b,
+        0 24px 0px #3e2a0b,
+        0 26px 0px #3d290a,
+        0 28px 0px #3c280a,
+        0 30px 0px #3b2709;
+    }
+    
+    .layer-top { top: 0px; }
+    .layer-middle { top: 33px; }
+    .layer-bottom { top: 66px; }
+    
+    .icing {
+      top: 2px;
+      left: 5px;
+      background-color: #f0e4d0;
+      width: 240px;
+      height: 90px;
+      border-radius: 50%;
+    }
+    
+    .icing:before {
+      content: "";
+      position: absolute;
+      top: 4px;
+      right: 5px;
+      bottom: 6px;
+      left: 5px;
+      background-color: #f5ebd9;
+      box-shadow:
+        0 0 4px #faf2e2,
+        0 0 4px #faf2e2,
+        0 0 4px #faf2e2;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    
+    .drip {
+      display: block;
+      width: 50px;
+      height: 60px;
+      border-bottom-left-radius: 25px;
+      border-bottom-right-radius: 25px;
+      background-color: #f0e4d0;
+    }
+    
+    .drip1 {
+      top: 53px;
+      left: 5px;
+      transform: skewY(15deg);
+      height: 48px;
+      width: 40px;
+    }
+    
+    .drip2 {
+      top: 69px;
+      left: 181px;
+      transform: skewY(-15deg);
+    }
+    
+    .drip3 {
+      top: 54px;
+      left: 90px;
+      width: 80px;
+      border-bottom-left-radius: 40px;
+      border-bottom-right-radius: 40px;
+    }
+    
+    .candle-group {
+      position: absolute;
+      top: -20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      z-index: 20;
+    }
+    
+    .candle {
+      background-color: #7B020B;
+      width: 16px;
+      height: 50px;
+      border-radius: 8px / 4px;
+      position: relative;
+      transform-origin: bottom center;
+      transition: transform 0.5s ease;
+    }
+    
+    .candle:nth-child(odd) {
+      transform: rotate(-2deg);
+    }
+    
+    .candle:nth-child(even) {
+      transform: rotate(2deg);
+    }
+    
+    .candle:before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 16px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #a30210;
+    }
+    
+    .flame {
+      position: absolute;
+      background: linear-gradient(to bottom, #FFF3B8 0%, #FFD747 40%, #FF9700 80%, #FF6700 100%);
+      width: 15px;
+      height: 35px;
+      border-radius: 10px 10px 10px 10px / 25px 25px 10px 10px;
+      top: -34px;
+      left: 50%;
+      margin-left: -7.5px;
+      z-index: 10;
+      box-shadow:
+        0 0 10px rgba(255, 165, 0, 0.5),
+        0 0 20px rgba(255, 165, 0, 0.5),
+        0 0 60px rgba(255, 165, 0, 0.5),
+        0 0 80px rgba(255, 165, 0, 0.5);
+      transform-origin: 50% 90%;
+      animation: flicker 1.5s ease-in-out infinite alternate;
+    }
+    
+    /* ===== Sprinkles & Confetti ===== */
+    .sprinkle {
+      position: absolute;
+      width: 5px;
+      height: 2px;
+      z-index: 15;
+      border-radius: 2px;
+    }
+    
+    .confetti {
+      position: absolute;
+      pointer-events: none;
+    }
+    
+    /* ===== Star Decorations ===== */
+    .star {
+      position: absolute;
+      display: block;
+      width: 0;
+      height: 0;
+      border-right: 10px solid transparent;
+      border-bottom: 7px solid gold;
+      border-left: 10px solid transparent;
+      transform: rotate(35deg);
+      animation: star-glow 2s ease-in-out infinite;
+      opacity: 0.7;
+    }
+    
+    .star:before {
+      content: '';
+      position: absolute;
+      height: 0;
+      width: 0;
+      top: -4.5px;
+      left: -6.5px;
+      border-bottom: 8px solid gold;
+      border-left: 3px solid transparent;
+      border-right: 3px solid transparent;
+      transform: rotate(-35deg);
+    }
+    
+    .star:after {
+      content: '';
+      position: absolute;
+      display: block;
+      top: 0.3px;
+      left: -10.5px;
+      width: 0;
+      height: 0;
+      border-right: 10px solid transparent;
+      border-bottom: 7px solid gold;
+      border-left: 10px solid transparent;
+      transform: rotate(-70deg);
+    }
+    
+    /* ===== Ribbon Decoration ===== */
+    .ribbon {
+      position: absolute;
+      width: 150px;
+      height: 25px;
+      transform-origin: center;
+      background: linear-gradient(to right, #ff6b6b, #ff8e8e);
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 5;
+    }
+    
+    .ribbon:after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 15px solid #ff8e8e;
+      right: -15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    .ribbon:before {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-right: 15px solid #ff6b6b;
+      left: -15px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    /* Additional decoration styles */
+    .party-hat {
+      position: absolute;
+      z-index: 10;
+    }
+    
+    .present-box {
+      position: absolute;
+      transform-origin: center bottom;
+      animation: present-bounce 3s ease-in-out infinite alternate;
+      z-index: 5;
+    }
+    
+    @keyframes present-bounce {
+      0% { transform: translateY(0) rotate(-1deg); }
+      100% { transform: translateY(-10px) rotate(2deg); }
+    }
+    
+    .streamer {
+      position: absolute;
+      top: -50px;
+      height: 100px;
+      width: 10px;
+      transform-origin: top center;
+      animation: wave 7s ease-in-out infinite;
+    }
+    
+    .streamer-left { animation-delay: 0.5s; }
+    .streamer-right { animation-delay: 1s; }
+    
+    @keyframes wave {
+      0%, 100% { transform: rotate(5deg); }
+      50% { transform: rotate(-10deg); }
+    }
+    
+    .bunting {
+      position: absolute;
+      width: 100%;
+      height: 30px;
+      z-index: 5;
+    }
+    
+    .bunting-flag {
+      position: absolute;
+      width: 20px;
+      height: 25px;
+      clip-path: polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%);
+      animation: flag-wave 5s ease-in-out infinite;
+    }
+    
+    @keyframes flag-wave {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(5deg); }
+      75% { transform: rotate(-5deg); }
+    }
+    
+    .sparkle {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      pointer-events: none;
+      z-index: 9;
+    }
+    
+    .sparkle path {
+      fill: gold;
+      animation: sparkle-fade 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes sparkle-fade {
+      0%, 100% { opacity: 0.2; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    
+    .birthday-banner {
+      position: absolute;
+      width: 120%;
+      left: -10%;
+      height: 50px;
+      transform: rotate(-2deg);
+      z-index: 5;
+      overflow: hidden;
+    }
+    
+    .firework {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      transform-origin: center;
+      animation: explode 1.5s ease-out forwards;
+      z-index: 8;
+      opacity: 0;
+    }
+    
+    @keyframes explode {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    
+    .decoration-number {
+      position: absolute;
+      font-weight: bold;
+      font-family: 'Pacifico', cursive;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #ff6b6b, #c44d4d);
+      color: white;
+      border-radius: 50%;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      animation: pulse-grow 3s ease-in-out infinite;
+      z-index: 10;
+    }
+    
+    @keyframes pulse-grow {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body class="festive-bg min-h-screen flex flex-col items-center justify-center p-4 font-sans">
+  <!-- Background pattern -->
+  <div class="festive-pattern"></div>
+
+  <!-- Scattered balloon decorations across the page -->
+  <div class="balloon-container fixed top-10 left-20 transform rotate-6" style="animation-delay: 0.5s; z-index: 10;">
+    <div class="balloon balloon-yellow"></div>
+    <div class="balloon-string"></div>
+  </div>
+
+ 
+
+  <div class="balloon-container fixed top-32 right-12 transform -rotate-3" style="animation-delay: 0.3s; z-index: 10;">
+    <div class="balloon balloon-green"></div>
+    <div class="balloon-string"></div>
+  </div>
+
+
+  <div class="balloon-container fixed top-40 right-80 transform -rotate-5" style="animation-delay: 0.7s; z-index: 10;">
+    <div class="balloon balloon-pink"></div>
+    <div class="balloon-string"></div>
+  </div>
+
+  <div class="balloon-container fixed top-16 left-10 transform rotate-10" style="animation-delay: 2s; z-index: 10;">
+    <div class="balloon balloon-purple"></div>
+    <div class="balloon-string"></div>
+  </div>
+
+  <div class="balloon-container fixed top-20 right-28 transform -rotate-7" style="animation-delay: 1.8s; z-index: 10;">
+    <div class="balloon balloon-blue"></div>
+    <div class="balloon-string"></div>
+  </div>
+  
+  <!-- SVG Party decorations instead of emojis -->
+  <!-- Party hat decorations -->
+  <div class="party-hat absolute top-10 left-40 rotate-12 animate-bounce-slow">
+    <svg width="50" height="70" viewBox="0 0 60 80">
+      <path d="M30,0 L60,70 L0,70 Z" fill="url(#party-hat-gradient)" />
+      <circle cx="30" cy="70" r="10" fill="#f5d0d0" />
+      <defs>
+        <linearGradient id="party-hat-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#ff9ed0" />
+          <stop offset="100%" stop-color="#d1569a" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  
+  <div class="party-hat absolute bottom-40 right-20 -rotate-12 animate-bounce-slow" style="animation-delay: 1.2s">
+    <svg width="40" height="60" viewBox="0 0 60 80">
+      <path d="M30,0 L60,70 L0,70 Z" fill="url(#party-hat-gradient2)" />
+      <circle cx="30" cy="70" r="10" fill="#d0f5e9" />
+      <defs>
+        <linearGradient id="party-hat-gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#4dffb8" />
+          <stop offset="100%" stop-color="#1a9c61" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  
+  <!-- Present boxes -->
+  <div class="present-box absolute bottom-10 left-10 z-10" style="animation-delay: 0.2s">
+    <svg width="50" height="60" viewBox="0 0 60 70">
+      <!-- Box -->
+      <rect x="5" y="20" width="50" height="50" fill="#4dabff" rx="2" />
+      <!-- Lid -->
+      <rect x="0" y="15" width="60" height="10" fill="#236bac" rx="2" />
+      <!-- Ribbon -->
+      <rect x="25" y="0" width="10" height="70" fill="#ff6b6b" />
+      <rect x="5" y="35" width="50" height="10" fill="#ff6b6b" />
+      <!-- Ribbon knot -->
+      <circle cx="30" cy="15" r="7" fill="#ff9e9e" />
+    </svg>
+  </div>
+  
+  <div class="present-box absolute bottom-20 right-20 z-10" style="animation-delay: 1.5s">
+    <svg width="40" height="50" viewBox="0 0 60 70">
+      <!-- Box -->
+      <rect x="5" y="20" width="50" height="50" fill="#ffed4d" rx="2" />
+      <!-- Lid -->
+      <rect x="0" y="15" width="60" height="10" fill="#d1b325" rx="2" />
+      <!-- Ribbon -->
+      <rect x="25" y="0" width="10" height="70" fill="#d14dff" />
+      <rect x="5" y="35" width="50" height="10" fill="#d14dff" />
+      <!-- Ribbon knot -->
+      <circle cx="30" cy="15" r="7" fill="#e980ff" />
+    </svg>
+  </div>
+  
+  <!-- Decoration Number "1" -->
+  <div class="decoration-number absolute top-24 right-4 w-16 h-16">
+    <span class="text-3xl">22th</span>
+  </div>
+  
+  <!-- Sparkles -->
+  <div class="sparkle absolute top-24 left-32" style="animation-delay: 0.3s">
+    <svg viewBox="0 0 24 24">
+      <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" />
+    </svg>
+  </div>
+  
+  <div class="sparkle absolute bottom-32 right-48" style="animation-delay: 1s">
+    <svg viewBox="0 0 24 24">
+      <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" />
+    </svg>
+  </div>
+  
+  <div class="sparkle absolute top-48 right-24" style="animation-delay: 1.7s">
+    <svg viewBox="0 0 24 24">
+      <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" />
+    </svg>
+  </div>
+  
+  <!-- Birthday Banner -->
+  <div class="birthday-banner absolute -top-10">
+    <svg width="100%" height="100%" viewBox="0 0 800 100">
+      <!-- Banner background -->
+      <path d="M0,20 Q400,60 800,20 L800,80 Q400,40 0,80 Z" fill="url(#banner-gradient)" />
+      
+      <!-- Banner text -->
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+            font-family="'Pacifico', cursive" font-size="32" fill="white">
+        Happy First Birthday!
+      </text>
+      
+      <defs>
+        <linearGradient id="banner-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#e97d9c" />
+          <stop offset="50%" stop-color="#d35a7d" />
+          <stop offset="100%" stop-color="#b33f61" />
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+  
+  <!-- Bunting flags -->
+  <div class="bunting absolute -top-2 left-0 right-0">
+    <template x-for="i in 20">
+      <div class="bunting-flag" 
+           :style="`left: ${i * 5}%; background-color: hsl(${i * 20}, 80%, 65%); animation-delay: ${i * 0.1}s;`">
+      </div>
+    </template>
+  </div>
+  
+  <!-- Streamers -->
+  <div class="streamer streamer-left absolute -top-5 left-10" 
+       style="background: linear-gradient(to bottom, #ff6b6b, #ffa5a5);">
+  </div>
+  
+  <div class="streamer streamer-right absolute -top-5 right-20" 
+       style="background: linear-gradient(to bottom, #4dabff, #a5d4ff);">
+  </div>
+  
+  <div class="streamer absolute -top-5 left-1/3" 
+       style="background: linear-gradient(to bottom, #ffed4d, #ffe99c); animation-delay: 1.5s">
+  </div>
+  
+  <div class="streamer absolute -top-5 right-1/3" 
+       style="background: linear-gradient(to bottom, #4dffb8, #a5ffde); animation-delay: 2s">
+  </div>
+  
+  <!-- Add firework effect container -->
+  <div class="fireworks-container fixed inset-0 pointer-events-none"></div>
+  
+  <!-- Star decorations (keep those from before) -->
+  <div class="star absolute top-20 left-20 scale-75"></div>
+  <div class="star absolute bottom-24 right-36 scale-50"></div>
+  <div class="star absolute top-40 right-24"></div>
+  <div class="star absolute bottom-40 left-32 scale-90"></div>
+  
+  <!-- Ribbon decoration in corner -->
+  <div class="ribbon absolute -top-4 -right-16"></div>
+  
+  <div 
+    x-data="birthdayCake()"
+    class="max-w-md w-full mx-auto relative"
+    x-init="init()"
+  >
+    <div class="relative z-10 transform">
+      <!-- Enhanced title with decorative elements -->
+      <h1 class="text-5xl font-fancy text-center mb-4 relative">
+        <span class="relative inline-block">
+          <span class="absolute inset-0 transform rotate-1">
+            <span class="absolute inset-0 bg-primary-100 rounded-lg opacity-30 blur-md"></span>
+          </span>
+          <span class="relative gradient-text drop-shadow-lg min-h-28">Happy Birthday, Yapi!</span>
+          
+        
+        </span>
+      </h1>
+    
+      <!-- Main cake container with improved design -->
+      <div class="relative bg-gradient-to-br from-chocolate-100 to-chocolate-200 p-10 rounded-2xl shadow-xl border border-chocolate-300 overflow-hidden">
+        <!-- Decorative blobs -->
+        <div class="absolute -top-10 -left-10 w-28 h-28 bg-primary-200 rounded-full opacity-40 blur-lg"></div>
+        <div class="absolute -bottom-8 -right-8 w-24 h-24 bg-primary-200 rounded-full opacity-40 blur-lg"></div>
+
+        
+        <div class="flex flex-col items-center">
+          <!-- Cake visualization with pop-in animation -->
+          <div class="relative mb-12 mt-8" style="animation: pop-in 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+            <div class="cake">
+              <div class="plate"></div>
+              <div class="layer layer-bottom"></div>
+              <div class="layer layer-middle"></div>
+              <div class="layer layer-top"></div>
+              <div class="icing"></div>
+              <div class="drip drip1"></div>
+              <div class="drip drip2"></div>
+              <div class="drip drip3"></div>
+              
+              <!-- Generate 30 sprinkles randomly positioned with more vibrant colors -->
+              <template x-for="i in 30">
+                <div class="sprinkle" 
+                    :style="`
+                      top: ${Math.random() * 80}px; 
+                      left: ${Math.random() * 240}px; 
+                      transform: rotate(${Math.random() * 180}deg); 
+                      background-color: hsl(${Math.random() * 360}, 90%, 65%);
+                    `">
+                </div>
+              </template>
+              
+              <!-- Candle group with better positioning -->
+              <div class="candle-group">
+                <template x-for="(candle, index) in candles" :key="index">
+                  <div class="candle" :class="{'animate-pulse-slow': !blown}">
+                    <div class="flame" x-show="!blown"></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Microphone access and improved instructions -->
+          <div class="text-center mb-8 bg-white bg-opacity-90 p-6 rounded-xl shadow-lg border-2 border-chocolate-200">
+            <template x-if="!micAccess">
+              <button 
+                @click="requestMicAccess" 
+                class="btn-3d bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold py-4 px-8 rounded-full mb-4 shadow-lg"
+              >
+                <span class="flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                  Start the Celebration
+                </span>
+              </button>
+            </template>
+            
+            <template x-if="micAccess && !blown">
+              <div class="text-chocolate-800 rounded-lg p-4 bg-chocolate-100 border border-chocolate-300">
+                <p class="mb-2 font-medium">Microphone Ready!</p>
+                <p class="font-bold text-xl mb-4">Blow into your microphone to blow out the candles 🎂</p>
+                
+                <!-- Enhanced blow strength meter -->
+                <div class="mt-3 relative">
+                  <div class="h-8 w-full bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                    <div 
+                      class="h-full bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 transition-all duration-200 flex items-center justify-end pr-3 text-xs text-white font-bold"
+                      :style="`width: ${Math.min(blowStrength * 100, 100)}%`"
+                      x-text="Math.round(Math.min(blowStrength * 100, 100)) + '%'"
+                    ></div>
+                  </div>
+                  
+                  <!-- Blow strength guidance -->
+                  <div class="flex justify-between text-xs text-chocolate-600 mt-1">
+                    <span>Gentle</span>
+                    <span class="font-medium">Blow Harder</span>
+                    <span>Strong!</span>
+                  </div>
+                </div>
+              </div>
+            </template>
+            
+            <template x-if="blown">
+              <div class="text-center py-4">
+                <p class="text-3xl font-fancy gradient-text font-bold mb-3 animate-pulse">
+                  🎉 Happy Birthday! 🎉
+                </p>
+                <p class="text-chocolate-700">Your wish has been made... may it come true! 🌈</p>
+              </div>
+            </template>
+          </div>
+          
+          <!-- Improved birthday message button -->
+          <button 
+            @click="playBirthdayMessage" 
+            class="btn-3d bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white font-bold py-4 px-8 rounded-full shadow-lg flex items-center transform transition-transform duration-300 ease-in-out hover:scale-105"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="relative">
+              Play Birthday Message
+              <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            </span>
+          </button>
+          
+          <!-- Audio elements -->
+          <audio x-ref="birthdaySong" src="bday.mp3" preload="auto"></audio>
+          <audio x-ref="birthdayMessage" src="message.mp3"auto"></audio>
+          
+          <!-- Enhanced confetti container -->
+          <div 
+            x-show="blown" 
+            x-transition 
+            class="confetti-container fixed inset-0 pointer-events-none z-50"
+          ></div>
+        </div>
+      </div>
+      
+      <!-- Decorative ribbon -->
+      <div class="relative h-12 mt-10">
+        <div class="absolute left-0 right-0 h-6 bg-gradient-to-r from-primary-300 to-primary-400 transform -skew-x-12 shadow-md"></div>
+        <div class="absolute left-0 right-0 h-6 bg-gradient-to-r from-primary-400 to-primary-500 transform skew-x-12 top-6 shadow-md"></div>
+      </div>
+      
+      <!-- Enhanced footer with author credit -->
+      <div class="w-full text-center mt-8 mb-4">
+        <div class="bg-white bg-opacity-70 backdrop-blur-sm rounded-full py-3 px-6 inline-block shadow-md">
+          <p class="text-chocolate-800 text-sm font-medium">
+            Made with <span class="text-red-500 animate-pulse inline-block transform hover:scale-125 transition-transform">❤️</span> by Agassi
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function birthdayCake() {
+      return {
+        micAccess: false,
+        blown: false,
+        blowStrength: 0,
+        candles: [1, 2, 3, 4, 5], // 5 candles
+        audioContext: null,
+        analyser: null,
+        microphone: null,
+        dataArray: null,
+        birthdaySongWasPlaying: false,
+        songAutoplayFailed: false, // New property to track autoplay status
+        
+        init() {
+          // Check if browser supports AudioContext
+          if (typeof window !== 'undefined' && window.AudioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          
+          // Add decorative elements
+          this.addRandomStars();
+          this.setupFireworks();
+          this.addRandomSparkles();
+          
+          // Try to play the birthday song immediately
+          this.tryPlayBirthdaySong();
+        },
+        
+        tryPlayBirthdaySong() {
+          const birthdaySong = this.$refs.birthdaySong;
+          if (birthdaySong) {
+            // Set proper volume
+            birthdaySong.volume = 0.7;
+            
+            // Play with user gesture simulation
+            document.addEventListener('DOMContentLoaded', () => {
+              // First attempt - most browsers require user interaction
+              birthdaySong.play()
+                .then(() => {
+                  console.log("Birthday song autoplay successful");
+                  this.songAutoplayFailed = false;
+                })
+                .catch(error => {
+                  console.log("Autoplay prevented by browser. User interaction required.", error);
+                  this.songAutoplayFailed = true;
+                  
+                  // Add visual cue for user to interact with page
+                  this.showPlaySongButton();
+                });
+            });
+            
+            // Also try when user first interacts with the page
+            const playOnInteraction = () => {
+              if (this.songAutoplayFailed) {
+                birthdaySong.play()
+                  .then(() => {
+                    console.log("Birthday song playing after user interaction");
+                    this.songAutoplayFailed = false;
+                  })
+                  .catch(e => console.log("Still couldn't play audio", e));
+              }
+              
+              // Remove listeners after first interaction
+              document.removeEventListener('click', playOnInteraction);
+              document.removeEventListener('touchstart', playOnInteraction);
+              document.removeEventListener('keydown', playOnInteraction);
+            };
+            
+            // Add event listeners for first user interaction
+            document.addEventListener('click', playOnInteraction, { once: true });
+            document.addEventListener('touchstart', playOnInteraction, { once: true });
+            document.addEventListener('keydown', playOnInteraction, { once: true });
+          }
+        },
+        
+        showPlaySongButton() {
+          // Add a floating button to play music if autoplay fails
+          const container = document.querySelector('.festive-bg');
+          if (!container) return;
+          
+          const button = document.createElement('button');
+          button.className = 'fixed top-4 right-4 bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-full shadow-lg z-50 flex items-center';
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+            <span class="ml-1 text-sm">Play Music</span>
+          `;
+          
+          button.addEventListener('click', () => {
+            const birthdaySong = this.$refs.birthdaySong;
+            if (birthdaySong) {
+              birthdaySong.play()
+                .then(() => {
+                  button.classList.add('hidden');
+                })
+                .catch(e => console.log("Still couldn't play audio", e));
+            }
+          });
+          
+          container.appendChild(button);
+        },
+        
+        // Rest of your existing functions...
+        // ...
+        addRandomStars() {
+          // Add 15 random stars across the page
+          const body = document.querySelector('body');
+          for (let i = 0; i < 15; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 95}vw`;
+            star.style.top = `${Math.random() * 95}vh`;
+            star.style.transform = `rotate(${Math.random() * 180}deg) scale(${Math.random() * 0.5 + 0.3})`;
+            star.style.opacity = Math.random() * 0.5 + 0.3;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            body.appendChild(star);
+          }
+        },
+        
+        requestMicAccess() {
+          if (!this.audioContext) {
+            alert('Your browser does not support the Web Audio API');
+            return;
+          }
+          
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+              this.micAccess = true;
+              this.setupAudioAnalysis(stream);
+            })
+            .catch(err => {
+              console.error('Error accessing microphone:', err);
+              alert('Could not access your microphone. Please check your permissions.');
+            });
+        },
+        
+        setupAudioAnalysis(stream) {
+          this.microphone = this.audioContext.createMediaStreamSource(stream);
+          this.analyser = this.audioContext.createAnalyser();
+          this.analyser.fftSize = 256;
+          
+          this.microphone.connect(this.analyser);
+          
+          const bufferLength = this.analyser.frequencyBinCount;
+          this.dataArray = new Uint8Array(bufferLength);
+          
+          this.startListening();
+        },
+        
+        startListening() {
+          const detectBlow = () => {
+            if (!this.blown) {
+              this.analyser.getByteFrequencyData(this.dataArray);
+              
+              // Calculate the average volume with a focus on lower frequencies (typical for blowing)
+              let sum = 0;
+              let count = 0;
+              
+              // Focus more on lower frequencies (1/3 of the spectrum)
+              const lowerFreqLimit = Math.floor(this.dataArray.length / 3);
+              
+              for (let i = 0; i < lowerFreqLimit; i++) {
+                sum += this.dataArray[i] * 1.5; // Weight lower frequencies more
+                count++;
+              }
+              
+              // Include rest of the spectrum with less weight
+              for (let i = lowerFreqLimit; i < this.dataArray.length; i++) {
+                sum += this.dataArray[i] * 0.5;
+                count++;
+              }
+              
+              const weightedAvg = sum / (count * 1.5); // Normalize
+              
+              // Normalize to 0-1 range with smoother transitions
+              this.blowStrength = Math.max(0, Math.min(1, weightedAvg / 100));
+              
+              // Check if blowing is strong enough with a slightly lower threshold
+              if (this.blowStrength > 0.65) {
+                this.candlesBlown();
+              }
+              
+              requestAnimationFrame(detectBlow);
+            }
+          };
+          
+          detectBlow();
+        },
+        
+        candlesBlown() {
+          this.blown = true;
+          
+          // Play birthday song
+          const birthdaySong = this.$refs.birthdaySong;
+          if (birthdaySong) {
+            birthdaySong.volume = 0.7; // Set to a comfortable volume
+            birthdaySong.play()
+              .catch(error => {
+                console.log("Autoplay prevented by browser. User interaction required.", error);
+              });
+          }
+          
+          // Create enhanced confetti effect
+          this.createConfetti();
+          
+          // Add a celebration message that appears after the candles are blown
+          setTimeout(() => {
+            this.showCelebrationMessage();
+          }, 500);
+
+          // Add an extra burst of fireworks when candles are blown
+          this.createFirework(5);
+        },
+
+        showCelebrationMessage() {
+          const container = document.querySelector('.cake-container');
+          if (!container) return;
+          
+          const message = document.createElement('div');
+          message.className = 'absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 text-center';
+          message.style.animation = 'pop-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+          message.innerHTML = `
+            <div class="bg-white bg-opacity-80 backdrop-blur-sm py-3 px-6 rounded-xl shadow-lg">
+              <p class="text-2xl font-fancy text-primary-600">Your wish is on its way!</p>
+            </div>
+          `;
+          
+          container.appendChild(message);
+        },
+
+        createConfetti() {
+          // Create many more confetti particles of different shapes and colors
+          const container = document.querySelector('.confetti-container');
+          if (!container) return;
+          
+          // Clear any existing confetti
+          container.innerHTML = '';
+          
+          const colors = [
+            '#ff5252', '#ffeb3b', '#2196f3', '#4caf50', 
+            '#e91e63', '#9c27b0', '#3f51b5', '#00bcd4',
+            '#ff9800', '#8bc34a', '#03a9f4', '#f44336'
+          ];
+          
+          const shapes = ['circle', 'square', 'triangle', 'line', 'heart'];
+          
+          // Create 250 confetti elements with more variety
+          for (let i = 0; i < 250; i++) {
+            const confetti = document.createElement('div');
+            const shape = shapes[Math.floor(Math.random() * shapes.length)];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            confetti.className = 'confetti';
+            
+            // Set shape specific styles
+            if (shape === 'circle') {
+              confetti.style.borderRadius = '50%';
+            } else if (shape === 'triangle') {
+              confetti.style.width = '0';
+              confetti.style.height = '0';
+              confetti.style.borderLeft = `${Math.random() * 10 + 5}px solid transparent`;
+              confetti.style.borderRight = `${Math.random() * 10 + 5}px solid transparent`;
+              confetti.style.borderBottom = `${Math.random() * 15 + 10}px solid ${color}`;
+              confetti.style.backgroundColor = 'transparent';
+            } else if (shape === 'line') {
+              confetti.style.width = `${Math.random() * 15 + 5}px`;
+              confetti.style.height = `${Math.random() * 2 + 1}px`;
+              confetti.style.borderRadius = '0';
+            } else if (shape === 'heart') {
+              // Create a heart shape using a special character
+              confetti.innerHTML = '❤';
+              confetti.style.fontSize = `${Math.random() * 15 + 10}px`;
+              confetti.style.color = color;
+              confetti.style.backgroundColor = 'transparent';
+            } else {
+              // Square
+              confetti.style.borderRadius = '0';
+            }
+            
+            // Common styles
+            Object.assign(confetti.style, {
+              position: 'absolute',
+              left: `${Math.random() * 100}vw`,
+              width: shape !== 'triangle' && shape !== 'heart' ? `${Math.random() * 10 + 5}px` : '',
+              height: shape !== 'triangle' && shape !== 'heart' ? `${Math.random() * 10 + 5}px` : '',
+              backgroundColor: shape !== 'triangle' && shape !== 'heart' ? color : 'transparent',
+              transform: `rotate(${Math.random() * 360}deg)`,
+              animation: `confetti-fall ${Math.random() * 3 + 2}s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards`,
+              animationDelay: `${Math.random() * 3}s`,
+              zIndex: '100',
+            });
+            
+            container.appendChild(confetti);
+          }
+        },
+        
+        playBirthdayMessage() {
+          const birthdaySong = this.$refs.birthdaySong;
+          const birthdayMessage = this.$refs.birthdayMessage;
+          
+          if (birthdayMessage) {
+            // Check if birthday song is playing and pause it
+            if (birthdaySong && !birthdaySong.paused) {
+              this.birthdaySongWasPlaying = true;
+              birthdaySong.pause();
+            } else {
+              this.birthdaySongWasPlaying = false;
+            }
+            
+            // Play the message
+            birthdayMessage.play();
+            
+            // Visual feedback for button press
+            const button = event.currentTarget;
+            button.classList.add('scale-95');
+            setTimeout(() => {
+              button.classList.remove('scale-95');
+            }, 150);
+            
+            // Show a floating message
+            this.showFloatingMessage();
+            
+            // Resume birthday song when message ends if it was playing
+            birthdayMessage.addEventListener('ended', () => {
+              if (this.birthdaySongWasPlaying && birthdaySong) {
+                birthdaySong.play();
+              }
+            }, { once: true });
+          }
+        },
+        
+        showFloatingMessage() {
+          const container = document.querySelector('.festive-bg');
+          if (!container) return;
+          
+          const message = document.createElement('div');
+          message.className = 'fixed inset-0 flex items-center justify-center z-50 pointer-events-none';
+          message.innerHTML = `
+            <div class="bg-white bg-opacity-80 backdrop-blur-lg py-4 px-8 rounded-xl shadow-lg transform scale-0" 
+                 style="animation: pop-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, float 4s ease-in-out infinite; animation-delay: 0s, 0.6s;">
+              <p class="text-2xl font-fancy text-primary-600">Sending birthday wishes your way! 🎂</p>
+            </div>
+          `;
+          
+          container.appendChild(message);
+          
+          // Remove the message after 5 seconds
+          setTimeout(() => {
+            container.removeChild(message);
+          }, 5000);
+        },
+
+        // Add this new method for fireworks
+        setupFireworks() {
+          const container = document.querySelector('.fireworks-container');
+          if (!container) return;
+          
+          // Create initial fireworks
+          this.createFirework(3);
+          
+          // Create new fireworks periodically
+          setInterval(() => {
+            this.createFirework(1);
+          }, 3000);
+        },
+        
+        createFirework(count) {
+          const container = document.querySelector('.fireworks-container');
+          if (!container) return;
+          
+          const colors = ['#ff5252', '#4dabff', '#4dffb8', '#ffed4d', '#d14dff'];
+          
+          for (let i = 0; i < count; i++) {
+            const x = Math.random() * 100;
+            const y = Math.random() * 60 + 10;
+            const size = Math.random() * 40 + 60;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            setTimeout(() => {
+              const firework = document.createElement('div');
+              firework.className = 'firework';
+              firework.style.left = `${x}vw`;
+              firework.style.top = `${y}vh`;
+              
+              // Create the explosion with particles
+              for (let j = 0; j < 12; j++) {
+                const particle = document.createElement('div');
+                const angle = (j / 12) * 360;
+                particle.style.position = 'absolute';
+                particle.style.width = '2px';
+                particle.style.height = '10px';
+                particle.style.backgroundColor = color;
+                particle.style.transformOrigin = 'bottom center';
+                particle.style.transform = `rotate(${angle}deg) translate(0, -${size}px)`;
+                particle.style.animation = `explode 1.5s ease-out forwards`;
+                firework.appendChild(particle);
+              }
+              
+              container.appendChild(firework);
+              
+              // Remove the firework after animation completes
+              setTimeout(() => {
+                container.removeChild(firework);
+              }, 1500);
+            }, Math.random() * 1000 * i);
+          }
+        },
+        
+        addRandomSparkles() {
+          const body = document.querySelector('body');
+          for (let i = 0; i < 10; i++) {
+            setTimeout(() => {
+              const sparkle = document.createElement('div');
+              sparkle.className = 'sparkle';
+              sparkle.style.left = `${Math.random() * 90 + 5}vw`;
+              sparkle.style.top = `${Math.random() * 90 + 5}vh`;
+              sparkle.style.animationDelay = `${Math.random() * 2}s`;
+              sparkle.style.transform = `scale(${Math.random() * 0.5 + 0.5})`;
+              
+              sparkle.innerHTML = `
+                <svg viewBox="0 0 24 24">
+                  <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" fill="${Math.random() > 0.5 ? 'gold' : '#ffc0cb'}"/>
+                </svg>
+              `;
+              
+              body.appendChild(sparkle);
+            }, i * 1000);
+          }
+        }
+      }
+    }
+  </script>
+</body>
+</html>
