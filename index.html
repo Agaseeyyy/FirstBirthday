@@ -952,7 +952,7 @@
               <div class="candle-group">
                 <template x-for="(candle, index) in candles" :key="index">
                   <div class="candle" :class="{'animate-pulse-slow': !blown}">
-                    <div class="flame" x-show="!blown"></div>
+                    <div class="flame" x-show="!blown" style="display: none;" x-transition:leave="transition-opacity duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
                   </div>
                 </template>
               </div>
@@ -1215,28 +1215,29 @@
               let sum = 0;
               let count = 0;
               
-              // Focus more on lower frequencies (1/3 of the spectrum)
-              const lowerFreqLimit = Math.floor(this.dataArray.length / 3);
+              // Focus only on the lowest frequencies (first quarter of the spectrum)
+              // This is where most blowing sounds are concentrated
+              const lowerFreqLimit = Math.floor(this.dataArray.length / 4);
               
               for (let i = 0; i < lowerFreqLimit; i++) {
-                sum += this.dataArray[i] * 1.5; // Weight lower frequencies more
+                sum += this.dataArray[i] * 2.0; // Weight lower frequencies more heavily
                 count++;
               }
               
-              // Include rest of the spectrum with less weight
-              for (let i = lowerFreqLimit; i < this.dataArray.length; i++) {
-                sum += this.dataArray[i] * 0.5;
-                count++;
-              }
-              
-              const weightedAvg = sum / (count * 1.5); // Normalize
+              const weightedAvg = sum / (count * 2.0); // Normalize
               
               // Normalize to 0-1 range with smoother transitions
-              this.blowStrength = Math.max(0, Math.min(1, weightedAvg / 100));
+              // Apply exponential weighting to make it more sensitive
+              const normalizedStrength = Math.max(0, Math.min(1, weightedAvg / 80));
+              this.blowStrength = this.blowStrength * 0.7 + normalizedStrength * 0.3; // Smooth transitions
               
-              // Check if blowing is strong enough with a slightly lower threshold
-              if (this.blowStrength > 0.65) {
+              console.log("Blow strength:", this.blowStrength.toFixed(2)); // Add logging for debugging
+              
+              // Lower the threshold to make it easier to blow out candles
+              if (this.blowStrength > 0.45) { // Reduced from 0.65
+                console.log("Candles blown!");
                 this.candlesBlown();
+                return; // Stop animation loop after candles are blown
               }
               
               requestAnimationFrame(detectBlow);
@@ -1247,7 +1248,16 @@
         },
         
         candlesBlown() {
+          if (this.blown) return; // Prevent multiple triggers
+          
+          // Force update the blown state
           this.blown = true;
+          console.log("Candles blown state:", this.blown);
+          
+          // Ensure all flames are hidden
+          document.querySelectorAll('.flame').forEach(flame => {
+            flame.style.display = 'none';
+          });
           
           // Play birthday song
           const birthdaySong = this.$refs.birthdaySong;
@@ -1270,23 +1280,7 @@
           // Add an extra burst of fireworks when candles are blown
           this.createFirework(5);
         },
-
-        showCelebrationMessage() {
-          const container = document.querySelector('.cake-container');
-          if (!container) return;
-          
-          const message = document.createElement('div');
-          message.className = 'absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 text-center';
-          message.style.animation = 'pop-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
-          message.innerHTML = `
-            <div class="bg-white bg-opacity-80 backdrop-blur-sm py-3 px-6 rounded-xl shadow-lg">
-              <p class="text-2xl font-fancy text-primary-600">Your wish is on its way!</p>
-            </div>
-          `;
-          
-          container.appendChild(message);
-        },
-
+        
         createConfetti() {
           // Create many more confetti particles of different shapes and colors
           const container = document.querySelector('.confetti-container');
