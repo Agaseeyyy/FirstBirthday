@@ -725,6 +725,100 @@
                   </span>
                 </button>
 
+                 <!-- Audio controls that show when playing -->
+                 <div 
+                 x-data="{ 
+                   isPlaying: false, 
+                   currentTime: 0, 
+                   duration: 0,
+                   volume: 0.7,
+                   formatTime(seconds) {
+                     const min = Math.floor(seconds / 60);
+                     const sec = Math.floor(seconds % 60);
+                     return `${min}:${sec < 10 ? '0' + sec : sec}`;
+                   },
+                   dragSeek(event) {
+                     const onMouseMove = (e) => {
+                       const rect = event.target.parentElement.getBoundingClientRect();
+                       const pos = (e.clientX - rect.left) / rect.width;
+                       this.currentTime = this.duration * pos;
+                       this.$refs.birthdayMessage.currentTime = this.currentTime;
+                     };
+                     const onMouseUp = () => {
+                       document.removeEventListener('mousemove', onMouseMove);
+                       document.removeEventListener('mouseup', onMouseUp);
+                     };
+                     document.addEventListener('mousemove', onMouseMove);
+                     document.addEventListener('mouseup', onMouseUp);
+                   }
+                 }"
+                 x-init="
+                   $refs.birthdayMessage.addEventListener('play', () => isPlaying = true);
+                   $refs.birthdayMessage.addEventListener('pause', () => isPlaying = false);
+                   $refs.birthdayMessage.addEventListener('ended', () => isPlaying = false);
+                   $refs.birthdayMessage.addEventListener('timeupdate', () => currentTime = $refs.birthdayMessage.currentTime);
+                   $refs.birthdayMessage.addEventListener('loadedmetadata', () => duration = $refs.birthdayMessage.duration);
+                   $refs.birthdayMessage.volume = volume;
+                   $refs.birthdaySong.volume = volume;
+                 "
+                 x-show="isPlaying"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 transform scale-95"
+                 x-transition:enter-end="opacity-100 transform scale-100"
+                 x-transition:leave="transition ease-in duration-200"
+                 x-transition:leave-start="opacity-100 transform scale-100"
+                 x-transition:leave-end="opacity-0 transform scale-95"
+                 class="w-full max-w-sm p-4 bg-white shadow-md rounded-xl"
+               >
+                 <!-- Seekable progress bar -->
+                 <div class="mb-2">
+                   <div class="flex justify-between mb-1 text-xs text-chocolate-600">
+                     <span x-text="formatTime(currentTime)"></span>
+                     <span x-text="formatTime(duration)"></span>
+                   </div>
+                   
+                   <!-- Seekable progress bar -->
+                   <div 
+                     class="relative h-2 overflow-hidden bg-gray-200 rounded-full cursor-pointer" 
+                     @click="
+                       const rect = $el.getBoundingClientRect();
+                       const pos = (event.clientX - rect.left) / rect.width;
+                       currentTime = duration * pos;
+                       $refs.birthdayMessage.currentTime = currentTime;
+                     "
+                   >
+                     <div 
+                       class="h-2 rounded-full bg-primary-500"
+                       :style="`width: ${duration ? (currentTime / duration) * 100 : 0}%`"
+                     ></div>
+                     
+                     <!-- Draggable handle -->
+                     <div 
+                       class="absolute w-4 h-4 transition-transform transform -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md top-1/2 bg-primary-600 hover:scale-110"
+                       :style="`left: ${duration ? (currentTime / duration) * 100 : 0}%`"
+                       @mousedown="dragSeek($event)"
+                     ></div>
+                   </div>
+                 </div>
+                 
+                 <!-- Volume control -->
+                 <div class="flex items-center mt-3">
+                   <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chocolate-600" viewBox="0 0 20 20" fill="currentColor">
+                     <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10c0-1.105-.894-2.103-2.343-2.828a1 1 0 010-1.415z" clip-rule="evenodd" />
+                   </svg>
+                   <input 
+                     type="range" 
+                     min="0" 
+                     max="1" 
+                     step="0.05" 
+                     x-model="volume"
+                     @input="$refs.birthdayMessage.volume = volume; $refs.birthdaySong.volume = volume;"
+                     class="w-full mx-2 accent-primary-500"
+                   />
+                   <span class="text-xs text-chocolate-600" x-text="Math.round(volume * 100) + '%'"></span>
+                 </div>
+               </div>
+
                 <!-- Microphone access and improved instructions -->
               <div class="w-full max-w-md p-3 mx-auto mb-4 text-center bg-white border-2 shadow-lg sm:mb-6 md:mb-8 bg-opacity-90 sm:p-4 md:p-6 rounded-xl border-chocolate-200">
                 <template x-if="!micAccess">
@@ -776,99 +870,7 @@
                 </template>
               </div>
                 
-                <!-- Audio controls that show when playing -->
-                <div 
-                  x-data="{ 
-                    isPlaying: false, 
-                    currentTime: 0, 
-                    duration: 0,
-                    volume: 0.7,
-                    formatTime(seconds) {
-                      const min = Math.floor(seconds / 60);
-                      const sec = Math.floor(seconds % 60);
-                      return `${min}:${sec < 10 ? '0' + sec : sec}`;
-                    },
-                    dragSeek(event) {
-                      const onMouseMove = (e) => {
-                        const rect = event.target.parentElement.getBoundingClientRect();
-                        const pos = (e.clientX - rect.left) / rect.width;
-                        this.currentTime = this.duration * pos;
-                        this.$refs.birthdayMessage.currentTime = this.currentTime;
-                      };
-                      const onMouseUp = () => {
-                        document.removeEventListener('mousemove', onMouseMove);
-                        document.removeEventListener('mouseup', onMouseUp);
-                      };
-                      document.addEventListener('mousemove', onMouseMove);
-                      document.addEventListener('mouseup', onMouseUp);
-                    }
-                  }"
-                  x-init="
-                    $refs.birthdayMessage.addEventListener('play', () => isPlaying = true);
-                    $refs.birthdayMessage.addEventListener('pause', () => isPlaying = false);
-                    $refs.birthdayMessage.addEventListener('ended', () => isPlaying = false);
-                    $refs.birthdayMessage.addEventListener('timeupdate', () => currentTime = $refs.birthdayMessage.currentTime);
-                    $refs.birthdayMessage.addEventListener('loadedmetadata', () => duration = $refs.birthdayMessage.duration);
-                    $refs.birthdayMessage.volume = volume;
-                    $refs.birthdaySong.volume = volume;
-                  "
-                  x-show="isPlaying"
-                  x-transition:enter="transition ease-out duration-300"
-                  x-transition:enter-start="opacity-0 transform scale-95"
-                  x-transition:enter-end="opacity-100 transform scale-100"
-                  x-transition:leave="transition ease-in duration-200"
-                  x-transition:leave-start="opacity-100 transform scale-100"
-                  x-transition:leave-end="opacity-0 transform scale-95"
-                  class="w-full max-w-sm p-4 bg-white shadow-md rounded-xl"
-                >
-                  <!-- Seekable progress bar -->
-                  <div class="mb-2">
-                    <div class="flex justify-between mb-1 text-xs text-chocolate-600">
-                      <span x-text="formatTime(currentTime)"></span>
-                      <span x-text="formatTime(duration)"></span>
-                    </div>
-                    
-                    <!-- Seekable progress bar -->
-                    <div 
-                      class="relative h-2 overflow-hidden bg-gray-200 rounded-full cursor-pointer" 
-                      @click="
-                        const rect = $el.getBoundingClientRect();
-                        const pos = (event.clientX - rect.left) / rect.width;
-                        currentTime = duration * pos;
-                        $refs.birthdayMessage.currentTime = currentTime;
-                      "
-                    >
-                      <div 
-                        class="h-2 rounded-full bg-primary-500"
-                        :style="`width: ${duration ? (currentTime / duration) * 100 : 0}%`"
-                      ></div>
-                      
-                      <!-- Draggable handle -->
-                      <div 
-                        class="absolute w-4 h-4 transition-transform transform -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md top-1/2 bg-primary-600 hover:scale-110"
-                        :style="`left: ${duration ? (currentTime / duration) * 100 : 0}%`"
-                        @mousedown="dragSeek($event)"
-                      ></div>
-                    </div>
-                  </div>
-                  
-                  <!-- Volume control -->
-                  <div class="flex items-center mt-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chocolate-600" viewBox="0 0 20 20" fill="currentColor">
-                      <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10c0-1.105-.894-2.103-2.343-2.828a1 1 0 010-1.415z" clip-rule="evenodd" />
-                    </svg>
-                    <input 
-                      type="range" 
-                      min="0" 
-                      max="1" 
-                      step="0.05" 
-                      x-model="volume"
-                      @input="$refs.birthdayMessage.volume = volume; $refs.birthdaySong.volume = volume;"
-                      class="w-full mx-2 accent-primary-500"
-                    />
-                    <span class="text-xs text-chocolate-600" x-text="Math.round(volume * 100) + '%'"></span>
-                  </div>
-                </div>
+               
               
                 <!-- Audio elements -->
                 <audio x-ref="birthdaySong" src="bday.mp3" preload="auto"></audio>
