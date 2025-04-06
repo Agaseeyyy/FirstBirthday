@@ -259,162 +259,64 @@
         },
         
         setupAudioAnalysis(stream) {
-          // First ensure audio context is properly initialized
+          // First resume the audio context if it's suspended
           if (this.audioContext.state === 'suspended') {
             this.audioContext.resume().then(() => {
-              console.log('AudioContext resumed');
-            }).catch(err => {
-              console.error('Error resuming audio context:', err);
+              console.log('AudioContext resumed successfully');
             });
           }
-        
-          // Disconnect any existing microphone connection
-          if (this.microphone) {
-            this.microphone.disconnect();
-          }
-          if (this.lowPass) {
-            this.lowPass.disconnect();
-          }
-          if (this.analyser) {
-            this.analyser.disconnect();
-          }
-        
-          // Create new nodes
+    
           this.microphone = this.audioContext.createMediaStreamSource(stream);
           this.analyser = this.audioContext.createAnalyser();
-          this.analyser.fftSize = this.isMobile ? 256 : 512;
-          this.analyser.smoothingTimeConstant = 0.8; // Smoother transitions
-        
-          // Add a low-pass filter to focus on blowing sounds
-          this.lowPass = this.audioContext.createBiquadFilter();
-          this.lowPass.type = 'lowpass';
-          this.lowPass.frequency.value = 1500; // Focus on frequencies below 1500Hz
-        
-          // Connect the nodes: mic -> lowpass -> analyser
-          this.microphone.connect(this.lowPass);
-          this.lowPass.connect(this.analyser);
-        
-          // Initialize data array
-          this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-        
-          // Reset blow detection variables
-          this.blowHistory = [];
-          this.consecutiveBlowFrames = 0;
-          this.blowStrength = 0;
-        
-          // Start with a calibration phase
-          this.calibrateMicrophone().then(() => {
-            this.startListening();
-          }).catch(err => {
-            console.error('Calibration failed:', err);
-            this.startListening(); // Fallback to normal detection
-          });
-        },
-        
-        // New method to calibrate microphone baseline
-        calibrateMicrophone() {
-          return new Promise((resolve) => {
-            console.log('Calibrating microphone...');
-            const calibrationSamples = [];
-            const calibrationDuration = 1000; // 1 second calibration
-            const startTime = Date.now();
-        
-            const collectSample = () => {
-              if (Date.now() - startTime < calibrationDuration) {
-                this.analyser.getByteFrequencyData(this.dataArray);
-                
-                // Calculate average volume during silent period
-                let sum = 0;
-                for (let i = 0; i < this.dataArray.length / 3; i++) {
-                  sum += this.dataArray[i];
-                }
-                calibrationSamples.push(sum / (this.dataArray.length / 3));
-                
-                requestAnimationFrame(collectSample);
-              } else {
-                // Calculate baseline from the quietest 50% of samples
-                calibrationSamples.sort((a, b) => a - b);
-                const baseline = calibrationSamples[Math.floor(calibrationSamples.length * 0.5)];
-                console.log('Microphone baseline:', baseline);
-                this.baselineVolume = baseline;
-                resolve();
-              }
-            };
-        
-            collectSample();
-          });
+          this.analyser.fftSize = 256;
+          this.analyser.smoothingTimeConstant = 0.8; // Add smoothing for more stable readings
+          
+          this.microphone.connect(this.analyser);
+          
+          const bufferLength = this.analyser.frequencyBinCount;
+          this.dataArray = new Uint8Array(bufferLength);
+          
+          this.startListening();
         },
         
         startListening() {
-          // Reset any previous detection
-          this.blown = false;
-          this.blowStrength = 0;
-          this.consecutiveBlowFrames = 0;
-          this.blowHistory = [];
-        
           const detectBlow = () => {
             if (!this.blown) {
               this.analyser.getByteFrequencyData(this.dataArray);
               
-              // Calculate volume with emphasis on low frequencies (blowing sounds)
-              let weightedSum = 0;
-              let maxVolume = 0;
-              let validSampleCount = 0;
+              // Calculate both total volume and low frequency volume
+              let totalSum = 0;
+              let lowFreqSum = 0;
+              let count = 0;
               
-              // Analyze frequencies with different weights
-              for (let i = 0; i < this.dataArray.length / 2; i++) { // Only first half of spectrum
-                let weight = 1;
+              // Analyze the full spectrum but weight lower frequencies more
+              for (let i = 0; i < this.dataArray.length; i++) {
+                totalSum += this.dataArray[i];
                 
-                // Extra weight for blowing frequencies (100Hz-800Hz)
-                if (i < this.dataArray.length / 4) { 
-                  weight = 2.5;
-                  validSampleCount++;
+                // Extra weight for lower frequencies (blowing sounds)
+                if (i < this.dataArray.length / 3) {
+                  lowFreqSum += this.dataArray[i] * 2.5;
                 }
-                
-                const adjustedValue = Math.max(0, this.dataArray[i] - (this.baselineVolume || 0));
-                const weightedValue = adjustedValue * weight;
-                weightedSum += weightedValue;
-                if (weightedValue > maxVolume) maxVolume = weightedValue;
+                count++;
               }
               
-              // Normalize to 0-1 range with logarithmic scaling
-              const normalizedStrength = validSampleCount > 0 
-                ? Math.min(1, Math.log10(1 + weightedSum / (validSampleCount * 20))) 
-                : 0;
+              const avgTotal = totalSum / count;
+              const avgLowFreq = lowFreqSum / (count * 2.5);
               
-              // Maintain history for more reliable detection
-              this.blowHistory.push(normalizedStrength);
-              if (this.blowHistory.length > 15) this.blowHistory.shift();
+              // Combine both metrics with more weight on low frequencies
+              const combinedStrength = (avgLowFreq * 0.7) + (avgTotal * 0.3);
               
-              // Calculate moving average
-              const avgStrength = this.blowHistory.length > 0
-                ? this.blowHistory.reduce((a, b) => a + b, 0) / this.blowHistory.length
-                : 0;
+              // More sensitive normalization
+              const normalizedStrength = Math.min(1, combinedStrength / 60); // Reduced denominator
               
-              // Update UI with current strength
-              this.blowStrength = normalizedStrength;
+              // Smoother transitions with exponential averaging
+              this.blowStrength = this.blowStrength * 0.6 + normalizedStrength * 0.4;
               
-              // Visual feedback - candles flicker more intensely
-              this.updateCandleFlicker(Math.min(1, normalizedStrength * 1.5));
               
-              // Detection requires either:
-              // 1. Sustained blowing (8 consecutive frames above threshold)
-              // 2. Very strong blow (normalized strength > 0.7)
-              if ((avgStrength > 0.25 && this.consecutiveBlowFrames > 8) || normalizedStrength > 0.7) {
-                console.log('Blow detected!', {
-                  strength: normalizedStrength,
-                  avgStrength: avgStrength,
-                  frames: this.consecutiveBlowFrames
-                });
+              // Lower threshold to 0.85 (85%) and add minimum duration check
+              if (this.blowStrength > 0.85) {
                 this.candlesBlown();
                 return;
-              }
-              
-              // Increment or reset consecutive frames counter
-              if (normalizedStrength > 0.15) {
-                this.consecutiveBlowFrames++;
-              } else {
-                this.consecutiveBlowFrames = Math.max(0, this.consecutiveBlowFrames - 2);
               }
               
               requestAnimationFrame(detectBlow);
