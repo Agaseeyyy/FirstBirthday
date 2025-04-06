@@ -423,26 +423,56 @@
           const birthdaySong = this.$refs.birthdaySong;
           const birthdayMessage = this.$refs.birthdayMessage;
           
-          if (birthdayMessage) {
-            if (birthdaySong && !birthdaySong.paused) {
-              this.birthdaySongWasPlaying = true;
-              birthdaySong.pause();
-            } else {
-              this.birthdaySongWasPlaying = false;
-            }
-            
-            birthdayMessage.play().catch(e => console.log('Error playing message', e));
-            
-            const button = event.currentTarget;
-            button.classList.add('scale-95');
-            setTimeout(() => button.classList.remove('scale-95'), 150);
-            
-            birthdayMessage.addEventListener('ended', () => {
-              if (this.birthdaySongWasPlaying && birthdaySong) {
+          if (!birthdayMessage) return;
+          
+          // First, properly track if the birthday song is actually playing
+          // Do this BEFORE any other operations
+          const isSongCurrentlyPlaying = birthdaySong && !birthdaySong.paused;
+          
+          // Toggle play/pause if message is already playing
+          if (!birthdayMessage.paused) {
+            birthdayMessage.pause();
+            console.log('Birthday message paused');
+            return;
+          }
+          
+          // Store song state ONLY if it's actually playing
+          this.birthdaySongWasPlaying = isSongCurrentlyPlaying;
+          console.log('Was birthday song playing?', this.birthdaySongWasPlaying);
+          
+          // Pause birthday song only if it's actively playing
+          if (isSongCurrentlyPlaying) {
+            console.log('Pausing birthday song to play message');
+            birthdaySong.pause();
+          }
+          
+          // Visual feedback for button press
+          const button = event.currentTarget;
+          button.classList.add('scale-95');
+          setTimeout(() => button.classList.remove('scale-95'), 150);
+          
+          // Play the message
+          birthdayMessage.play()
+            .then(() => {
+              console.log('Birthday message playing');
+            })
+            .catch(e => {
+              console.error('Error playing message:', e);
+              // If message fails to play but song was playing, resume it
+              if (this.birthdaySongWasPlaying) {
                 birthdaySong.play().catch(e => console.log('Error resuming song', e));
               }
-            }, { once: true });
-          }
+            });
+          
+          // When message ends, resume song ONLY if it was actually playing before
+          birthdayMessage.addEventListener('ended', () => {
+            console.log('Message ended. Should resume song?', this.birthdaySongWasPlaying);
+            if (this.birthdaySongWasPlaying) {
+              birthdaySong.play()
+                .then(() => console.log('Birthday song resumed after message'))
+                .catch(e => console.log('Error resuming song:', e));
+            }
+          }, { once: true });
         },
         
         setupFireworks() {
@@ -784,24 +814,121 @@
                 </template>
               </div>
               
-              <!-- Improved birthday message button -->
-              <button 
-                @click="playBirthdayMessage" 
-                class="btn-3d bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white font-bold py-4 px-8 rounded-full shadow-lg flex items-center transform transition-transform duration-300 ease-in-out hover:scale-105"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="relative">
-                  Play Birthday Message
-                  <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                </span>
-              </button>
+              <!-- Replace the existing birthday message button with this enhanced version -->
+              <div class="flex flex-col items-center space-y-4">
+                <!-- Improved birthday message button -->
+                <button 
+                  @click="playBirthdayMessage" 
+                  class="btn-3d bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white font-bold py-4 px-8 rounded-full shadow-lg flex items-center transform transition-transform duration-300 ease-in-out hover:scale-105"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="relative">
+                    Play Birthday Message
+                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                  </span>
+                </button>
+                
+                <!-- Audio controls that show when playing -->
+                <div 
+                  x-data="{ 
+                    isPlaying: false, 
+                    currentTime: 0, 
+                    duration: 0,
+                    volume: 0.7,
+                    formatTime(seconds) {
+                      const min = Math.floor(seconds / 60);
+                      const sec = Math.floor(seconds % 60);
+                      return `${min}:${sec < 10 ? '0' + sec : sec}`;
+                    },
+                    dragSeek(event) {
+                      const onMouseMove = (e) => {
+                        const rect = event.target.parentElement.getBoundingClientRect();
+                        const pos = (e.clientX - rect.left) / rect.width;
+                        this.currentTime = this.duration * pos;
+                        this.$refs.birthdayMessage.currentTime = this.currentTime;
+                      };
+                      const onMouseUp = () => {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                      };
+                      document.addEventListener('mousemove', onMouseMove);
+                      document.addEventListener('mouseup', onMouseUp);
+                    }
+                  }"
+                  x-init="
+                    $refs.birthdayMessage.addEventListener('play', () => isPlaying = true);
+                    $refs.birthdayMessage.addEventListener('pause', () => isPlaying = false);
+                    $refs.birthdayMessage.addEventListener('ended', () => isPlaying = false);
+                    $refs.birthdayMessage.addEventListener('timeupdate', () => currentTime = $refs.birthdayMessage.currentTime);
+                    $refs.birthdayMessage.addEventListener('loadedmetadata', () => duration = $refs.birthdayMessage.duration);
+                    $refs.birthdayMessage.volume = volume;
+                    $refs.birthdaySong.volume = volume;
+                  "
+                  x-show="isPlaying"
+                  x-transition:enter="transition ease-out duration-300"
+                  x-transition:enter-start="opacity-0 transform scale-95"
+                  x-transition:enter-end="opacity-100 transform scale-100"
+                  x-transition:leave="transition ease-in duration-200"
+                  x-transition:leave-start="opacity-100 transform scale-100"
+                  x-transition:leave-end="opacity-0 transform scale-95"
+                  class="w-full max-w-sm p-4 bg-white rounded-xl shadow-md"
+                >
+                  <!-- Seekable progress bar -->
+                  <div class="mb-2">
+                    <div class="flex justify-between text-xs text-chocolate-600 mb-1">
+                      <span x-text="formatTime(currentTime)"></span>
+                      <span x-text="formatTime(duration)"></span>
+                    </div>
+                    
+                    <!-- Seekable progress bar -->
+                    <div 
+                      class="h-2 bg-gray-200 rounded-full overflow-hidden relative cursor-pointer" 
+                      @click="
+                        const rect = $el.getBoundingClientRect();
+                        const pos = (event.clientX - rect.left) / rect.width;
+                        currentTime = duration * pos;
+                        $refs.birthdayMessage.currentTime = currentTime;
+                      "
+                    >
+                      <div 
+                        class="h-2 bg-primary-500 rounded-full"
+                        :style="`width: ${duration ? (currentTime / duration) * 100 : 0}%`"
+                      ></div>
+                      
+                      <!-- Draggable handle -->
+                      <div 
+                        class="absolute top-1/2 -translate-y-1/2 h-4 w-4 bg-primary-600 rounded-full shadow-md transform -translate-x-1/2 hover:scale-110 transition-transform"
+                        :style="`left: ${duration ? (currentTime / duration) * 100 : 0}%`"
+                        @mousedown="dragSeek($event)"
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <!-- Volume control -->
+                  <div class="flex items-center mt-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-chocolate-600" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10c0-1.105-.894-2.103-2.343-2.828a1 1 0 010-1.415z" clip-rule="evenodd" />
+                    </svg>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="1" 
+                      step="0.05" 
+                      x-model="volume"
+                      @input="$refs.birthdayMessage.volume = volume; $refs.birthdaySong.volume = volume;"
+                      class="w-full mx-2 accent-primary-500"
+                    />
+                    <span class="text-xs text-chocolate-600" x-text="Math.round(volume * 100) + '%'"></span>
+                  </div>
+                </div>
               
-              <!-- Audio elements -->
-              <audio x-ref="birthdaySong" src="bday.mp3" preload="auto"></audio>
-              <audio x-ref="birthdayMessage" src="message.mp3"auto"></audio>
+                <!-- Audio elements -->
+                <audio x-ref="birthdaySong" src="bday.mp3" preload="auto"></audio>
+                <audio x-ref="birthdayMessage" src="https://cdn.discordapp.com/attachments/1280909738841735169/1358466132914212945/lv_0_20250406233510.mp3?ex=67f3f1ad&is=67f2a02d&hm=2844327706b7d77288e67c7fd2f06e21512561dc739095523de84d0d63204a9e&" preload="auto"></audio>
+              </div>
               
               <!-- Enhanced confetti container -->
               <div 
