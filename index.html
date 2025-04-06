@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="image" property="og:image" content="https://png.pngtree.com/png-clipart/20220923/original/pngtree-cute-happy-birthday-to-you-my-love-banner-with-balloons-png-image_8629345.png">
+  <meta name="description" content="A birthday cake and message for my love.">
   <title>Love's Birthday</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -257,71 +259,162 @@
         },
         
         setupAudioAnalysis(stream) {
+          // First ensure audio context is properly initialized
           if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume();
+            this.audioContext.resume().then(() => {
+              console.log('AudioContext resumed');
+            }).catch(err => {
+              console.error('Error resuming audio context:', err);
+            });
           }
-    
+        
+          // Disconnect any existing microphone connection
+          if (this.microphone) {
+            this.microphone.disconnect();
+          }
+          if (this.lowPass) {
+            this.lowPass.disconnect();
+          }
+          if (this.analyser) {
+            this.analyser.disconnect();
+          }
+        
+          // Create new nodes
           this.microphone = this.audioContext.createMediaStreamSource(stream);
           this.analyser = this.audioContext.createAnalyser();
           this.analyser.fftSize = this.isMobile ? 256 : 512;
-          this.analyser.smoothingTimeConstant = this.isMobile ? 0.8 : 0.7;
-          
+          this.analyser.smoothingTimeConstant = 0.8; // Smoother transitions
+        
+          // Add a low-pass filter to focus on blowing sounds
           this.lowPass = this.audioContext.createBiquadFilter();
           this.lowPass.type = 'lowpass';
-          this.lowPass.frequency.value = 2000;
-          
+          this.lowPass.frequency.value = 1500; // Focus on frequencies below 1500Hz
+        
+          // Connect the nodes: mic -> lowpass -> analyser
           this.microphone.connect(this.lowPass);
           this.lowPass.connect(this.analyser);
-          
+        
+          // Initialize data array
           this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
-          
+        
+          // Reset blow detection variables
           this.blowHistory = [];
           this.consecutiveBlowFrames = 0;
-          
-          this.startListening();
+          this.blowStrength = 0;
+        
+          // Start with a calibration phase
+          this.calibrateMicrophone().then(() => {
+            this.startListening();
+          }).catch(err => {
+            console.error('Calibration failed:', err);
+            this.startListening(); // Fallback to normal detection
+          });
+        },
+        
+        // New method to calibrate microphone baseline
+        calibrateMicrophone() {
+          return new Promise((resolve) => {
+            console.log('Calibrating microphone...');
+            const calibrationSamples = [];
+            const calibrationDuration = 1000; // 1 second calibration
+            const startTime = Date.now();
+        
+            const collectSample = () => {
+              if (Date.now() - startTime < calibrationDuration) {
+                this.analyser.getByteFrequencyData(this.dataArray);
+                
+                // Calculate average volume during silent period
+                let sum = 0;
+                for (let i = 0; i < this.dataArray.length / 3; i++) {
+                  sum += this.dataArray[i];
+                }
+                calibrationSamples.push(sum / (this.dataArray.length / 3));
+                
+                requestAnimationFrame(collectSample);
+              } else {
+                // Calculate baseline from the quietest 50% of samples
+                calibrationSamples.sort((a, b) => a - b);
+                const baseline = calibrationSamples[Math.floor(calibrationSamples.length * 0.5)];
+                console.log('Microphone baseline:', baseline);
+                this.baselineVolume = baseline;
+                resolve();
+              }
+            };
+        
+            collectSample();
+          });
         },
         
         startListening() {
+          // Reset any previous detection
+          this.blown = false;
+          this.blowStrength = 0;
+          this.consecutiveBlowFrames = 0;
+          this.blowHistory = [];
+        
           const detectBlow = () => {
             if (!this.blown) {
               this.analyser.getByteFrequencyData(this.dataArray);
               
+              // Calculate volume with emphasis on low frequencies (blowing sounds)
               let weightedSum = 0;
               let maxVolume = 0;
+              let validSampleCount = 0;
               
-              for (let i = 0; i < this.dataArray.length; i++) {
+              // Analyze frequencies with different weights
+              for (let i = 0; i < this.dataArray.length / 2; i++) { // Only first half of spectrum
                 let weight = 1;
+                
+                // Extra weight for blowing frequencies (100Hz-800Hz)
                 if (i < this.dataArray.length / 4) { 
-                  weight = 3.0;
-                } 
-                else if (i < this.dataArray.length / 2) {
-                  weight = 1.5;
+                  weight = 2.5;
+                  validSampleCount++;
                 }
                 
-                const weightedValue = this.dataArray[i] * weight;
+                const adjustedValue = Math.max(0, this.dataArray[i] - (this.baselineVolume || 0));
+                const weightedValue = adjustedValue * weight;
                 weightedSum += weightedValue;
                 if (weightedValue > maxVolume) maxVolume = weightedValue;
               }
               
-              const normalizedStrength = Math.min(1, Math.log10(1 + weightedSum / 50));
+              // Normalize to 0-1 range with logarithmic scaling
+              const normalizedStrength = validSampleCount > 0 
+                ? Math.min(1, Math.log10(1 + weightedSum / (validSampleCount * 20))) 
+                : 0;
               
+              // Maintain history for more reliable detection
               this.blowHistory.push(normalizedStrength);
-              if (this.blowHistory.length > 10) this.blowHistory.shift();
+              if (this.blowHistory.length > 15) this.blowHistory.shift();
               
-              const avgStrength = this.blowHistory.reduce((a, b) => a + b, 0) / this.blowHistory.length;
+              // Calculate moving average
+              const avgStrength = this.blowHistory.length > 0
+                ? this.blowHistory.reduce((a, b) => a + b, 0) / this.blowHistory.length
+                : 0;
               
-              if (avgStrength > 0.3 || maxVolume > 200) {
+              // Update UI with current strength
+              this.blowStrength = normalizedStrength;
+              
+              // Visual feedback - candles flicker more intensely
+              this.updateCandleFlicker(Math.min(1, normalizedStrength * 1.5));
+              
+              // Detection requires either:
+              // 1. Sustained blowing (8 consecutive frames above threshold)
+              // 2. Very strong blow (normalized strength > 0.7)
+              if ((avgStrength > 0.25 && this.consecutiveBlowFrames > 8) || normalizedStrength > 0.7) {
+                console.log('Blow detected!', {
+                  strength: normalizedStrength,
+                  avgStrength: avgStrength,
+                  frames: this.consecutiveBlowFrames
+                });
+                this.candlesBlown();
+                return;
+              }
+              
+              // Increment or reset consecutive frames counter
+              if (normalizedStrength > 0.15) {
                 this.consecutiveBlowFrames++;
-                
-                this.updateCandleFlicker(Math.min(1, normalizedStrength * 2));
-                this.blowStrength = Math.max(this.blowStrength, normalizedStrength);
-                
-                if (this.consecutiveBlowFrames > 5 || normalizedStrength > 0.6) {
-                  this.candlesBlown();
-                  return;
-                }
               } else {
-                this.consecutiveBlowFrames = 0;
+                this.consecutiveBlowFrames = Math.max(0, this.consecutiveBlowFrames - 2);
               }
               
               requestAnimationFrame(detectBlow);
@@ -563,7 +656,7 @@
         <div class="balloon-string"></div>
       </div>
 
-      <div class="balloon-container fixed top-20 right-28 transform -rotate-7" style="animation-delay: 1.8s; z-index: 10;">
+      <div class="balloon-container fixed top-20 right-20 transform -rotate-7" style="animation-delay: 1.8s; z-index: 10;">
         <div class="balloon balloon-blue"></div>
         <div class="balloon-string"></div>
       </div>
@@ -625,7 +718,7 @@
       </div>
       
       <!-- Decoration Number "1" -->
-      <div class="decoration-number absolute top-24 right-4 w-16 h-16">
+      <div class="decoration-number absolute top-24 right-4 w-16 h-16 z-50">
         <span class="text-3xl">22th</span>
       </div>
       
@@ -677,7 +770,7 @@
       <div class="star absolute bottom-40 left-32 scale-90"></div>
       
       <!-- Ribbon decoration in corner -->
-      <div class="ribbon absolute -top-4 -right-16"></div>
+      <div class="ribbon absolute -top-4 -right-4"></div>
       
       <div 
         class="max-w-md w-full mx-auto relative"
