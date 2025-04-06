@@ -117,10 +117,10 @@
   
   
 </head>
-<body class="bg-gradient-to-br from-pink-50 to-orange-50 min-h-screen overflow-y-auto relative">
+<body class="relative min-h-screen overflow-y-auto bg-gradient-to-br from-pink-50 to-orange-50">
   <div class="fixed inset-0 pointer-events-none bg-confetti-pattern opacity-60"></div>
 
-  <div class="w-full max-w-screen-lg mx-auto py-8 relative z-10 px-4">
+  <div class="relative z-10 w-full max-w-screen-lg px-4 py-8 mx-auto">
     <div 
       x-data="{
         micAccess: false,
@@ -167,79 +167,10 @@
         },
         
         tryPlayBirthdaySong() {
-          const birthdaySong = this.$refs.birthdaySong;
-          if (birthdaySong) {
-            birthdaySong.volume = 0.7;
-            
-            birthdaySong.play()
-              .then(() => {
-                console.log('Birthday song autoplay successful');
-                this.songAutoplayFailed = false;
-              })
-              .catch(error => {
-                console.log('Autoplay prevented by browser', error);
-                this.songAutoplayFailed = true;
-                this.showPlaySongButton();
-                
-                // Try again on user interaction
-                const playOnInteraction = () => {
-                  if (this.songAutoplayFailed) {
-                    birthdaySong.play().catch(e => console.log('Still could not play', e));
-                  }
-                  document.removeEventListener('click', playOnInteraction);
-                  document.removeEventListener('touchstart', playOnInteraction);
-                };
-                document.addEventListener('click', playOnInteraction, { once: true });
-                document.addEventListener('touchstart', playOnInteraction, { once: true });
-              });
-          }
+          console.log('Auto-play disabled, waiting for user interaction');
+          this.songAutoplayFailed = true;
         },
-        
-        showPlaySongButton() {
-          const container = document.querySelector('body');
-          if (!container) return;
           
-          const button = document.createElement('button');
-          
-          // Improved class with better mobile positioning and tap area
-          button.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-primary-500 hover:bg-primary-600 text-white py-3 px-4 rounded-xl shadow-xl z-[100] flex items-center justify-center md:bottom-auto md:left-auto md:transform-none md:top-4 md:right-4 md:rounded-full md:py-2 md:px-3';
-          
-          // Simplified SVG with better size for touch
-          button.innerHTML = `
-            <svg xmlns='http://www.w3.org/2000/svg' class='h-5 w-5 md:h-6 md:w-6' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
-              <path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3' />
-            </svg>
-            <span class='ml-2 text-base font-medium md:text-sm'>Play Music</span>
-          `;
-          
-          // Add both click and touchend handlers for better mobile response
-          const playMusic = () => {
-            const birthdaySong = this.$refs.birthdaySong;
-            if (birthdaySong) {
-              birthdaySong.play()
-                .then(() => {
-                  button.classList.add('opacity-0');
-                  setTimeout(() => button.remove(), 300); // Remove after fade-out
-                })
-                .catch(err => {
-                  console.error('Failed to play:', err);
-                  // Make the button pulse to indicate it needs to be tapped again
-                  button.classList.add('animate-pulse');
-                });
-            }
-          };
-          
-          button.addEventListener('click', playMusic);
-          button.addEventListener('touchend', (e) => {
-            e.preventDefault(); // Prevent double-firing with click
-            playMusic();
-          });
-          
-          // Add transition for smooth hiding
-          button.style.transition = 'opacity 0.3s ease';
-          
-          container.appendChild(button);
-        },
         
         requestMicAccess() {
           if (!this.audioContext) {
@@ -247,6 +178,20 @@
             return;
           }
           
+          // First, try to play the birthday song 
+          const birthdaySong = this.$refs.birthdaySong;
+          if (birthdaySong) {
+            birthdaySong.volume = 0.7;
+            birthdaySong.play()
+              .then(() => {
+                console.log('Birthday song playing successfully');
+              })
+              .catch(e => {
+                console.log('Error playing birthday song', e);
+              });
+          }
+          
+          // Then request microphone access
           navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
               this.micAccess = true;
@@ -553,14 +498,14 @@
           }
         }
       }"
-      class="w-full mx-auto relative"
+      class="relative w-full mx-auto"
       x-init="init()"
     >
       <!-- Background pattern -->
       <div class="festive-pattern"></div>
 
       <!-- Balloon 1 -->
-      <div class="fixed top-10 left-20 transform rotate-6 z-10 origin-bottom md:block hidden" style="animation-delay: 0.5s;">
+      <div class="fixed z-10 hidden origin-bottom transform top-10 left-20 rotate-6 md:block" style="animation-delay: 0.5s;">
         <div class="relative w-[50px] h-[65px] rounded-[50%_50%_50%_50%_/_40%_40%_60%_60%] shadow-inner shadow-black/15 bg-gradient-to-br from-yellow-300 to-yellow-500">
           <div class="absolute w-[15px] h-[15px] bg-white/50 rounded-full top-[10px] left-[10px]"></div>
         </div>
@@ -568,7 +513,7 @@
       </div>
 
       <!-- Balloon 2 (visible on all screens) -->
-      <div class="fixed top-32 right-12 transform -rotate-3 z-10 origin-bottom" style="animation-delay: 0.3s;">
+      <div class="fixed z-10 origin-bottom transform top-32 right-12 -rotate-3" style="animation-delay: 0.3s;">
         <div class="relative w-[50px] h-[65px] rounded-[50%_50%_50%_50%_/_40%_40%_60%_60%] shadow-inner shadow-black/15 bg-gradient-to-br from-green-300 to-green-600">
           <div class="absolute w-[15px] h-[15px] bg-white/50 rounded-full top-[10px] left-[10px]"></div>
         </div>
@@ -576,25 +521,25 @@
       </div>
 
       <!-- More balloons (hidden on mobile) -->
-      <div class="fixed top-40 right-80 transform -rotate-5 z-10 origin-bottom lg:block hidden" style="animation-delay: 0.7s;">
+      <div class="fixed z-10 hidden origin-bottom transform top-40 right-80 -rotate-5 lg:block" style="animation-delay: 0.7s;">
         <div class="relative w-[50px] h-[65px] rounded-[50%_50%_50%_50%_/_40%_40%_60%_60%] shadow-inner shadow-black/15 bg-gradient-to-br from-pink-300 to-pink-500">
           <div class="absolute w-[15px] h-[15px] bg-white/50 rounded-full top-[10px] left-[10px]"></div>
         </div>
         <div class="absolute w-[1px] h-[80px] bg-black/60 -bottom-[80px] left-[25px] origin-top"></div>
       </div>
 
-      <div class="balloon-container fixed top-16 left-10 transform rotate-10" style="animation-delay: 2s; z-index: 10;">
+      <div class="fixed transform balloon-container top-16 left-10 rotate-10" style="animation-delay: 2s; z-index: 10;">
         <div class="balloon balloon-purple"></div>
         <div class="balloon-string"></div>
       </div>
 
-      <div class="balloon-container fixed top-20 right-20 transform -rotate-7" style="animation-delay: 1.8s; z-index: 10;">
+      <div class="fixed transform balloon-container top-20 right-20 -rotate-7" style="animation-delay: 1.8s; z-index: 10;">
         <div class="balloon balloon-blue"></div>
         <div class="balloon-string"></div>
       </div>
       
       <!-- Party hat decorations -->
-      <div class="party-hat absolute top-10 left-40 rotate-12 animate-bounce-slow">
+      <div class="absolute party-hat top-10 left-40 rotate-12 animate-bounce-slow">
         <svg width="50" height="70" viewBox="0 0 60 80">
           <path d="M30,0 L60,70 L0,70 Z" fill="url(#party-hat-gradient)" />
           <circle cx="30" cy="70" r="10" fill="#f5d0d0" />
@@ -607,7 +552,7 @@
         </svg>
       </div>
       
-      <div class="party-hat absolute bottom-40 right-20 -rotate-12 animate-bounce-slow" style="animation-delay: 1.2s">
+      <div class="absolute party-hat bottom-40 right-20 -rotate-12 animate-bounce-slow" style="animation-delay: 1.2s">
         <svg width="40" height="60" viewBox="0 0 60 80">
           <path d="M30,0 L60,70 L0,70 Z" fill="url(#party-hat-gradient2)" />
           <circle cx="30" cy="70" r="10" fill="#d0f5e9" />
@@ -621,7 +566,7 @@
       </div>
       
       <!-- Present boxes -->
-      <div class="present-box absolute bottom-10 left-10 z-10" style="animation-delay: 0.2s">
+      <div class="absolute z-10 present-box bottom-10 left-10" style="animation-delay: 0.2s">
         <svg width="50" height="60" viewBox="0 0 60 70">
           <!-- Box -->
           <rect x="5" y="20" width="50" height="50" fill="#4dabff" rx="2" />
@@ -635,7 +580,7 @@
         </svg>
       </div>
       
-      <div class="present-box absolute bottom-20 right-20 z-10" style="animation-delay: 1.5s">
+      <div class="absolute z-10 present-box bottom-20 right-20" style="animation-delay: 1.5s">
         <svg width="40" height="50" viewBox="0 0 60 70">
           <!-- Box -->
           <rect x="5" y="20" width="50" height="50" fill="#ffed4d" rx="2" />
@@ -650,24 +595,24 @@
       </div>
       
       <!-- Decoration Number "1" -->
-      <div class="decoration-number absolute top-24 right-4 w-16 h-16 z-50">
+      <div class="absolute z-50 w-16 h-16 decoration-number top-24 right-4">
         <span class="text-3xl">22th</span>
       </div>
       
       <!-- Sparkles -->
-      <div class="sparkle absolute top-24 left-32" style="animation-delay: 0.3s">
+      <div class="absolute sparkle top-24 left-32" style="animation-delay: 0.3s">
         <svg viewBox="0 0 24 24">
           <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" />
         </svg>
       </div>
       
-      <div class="sparkle absolute bottom-32 right-48" style="animation-delay: 1s">
+      <div class="absolute sparkle bottom-32 right-48" style="animation-delay: 1s">
         <svg viewBox="0 0 24 24">
           <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" />
         </svg>
       </div>
       
-      <div class="sparkle absolute top-48 right-24" style="animation-delay: 1.7s">
+      <div class="absolute sparkle top-48 right-24" style="animation-delay: 1.7s">
         <svg viewBox="0 0 24 24">
           <path d="M12,0 L14,9 L23,12 L14,15 L12,24 L10,15 L1,12 L10,9 Z" />
         </svg>
@@ -675,45 +620,45 @@
       
       
       <!-- Streamers -->
-      <div class="streamer streamer-left absolute -top-5 left-10" 
+      <div class="absolute streamer streamer-left -top-5 left-10" 
           style="background: linear-gradient(to bottom, #ff6b6b, #ffa5a5);">
       </div>
       
-      <div class="streamer streamer-right absolute -top-5 right-20" 
+      <div class="absolute streamer streamer-right -top-5 right-20" 
           style="background: linear-gradient(to bottom, #4dabff, #a5d4ff);">
       </div>
       
-      <div class="streamer absolute -top-5 left-1/3" 
+      <div class="absolute streamer -top-5 left-1/3" 
           style="background: linear-gradient(to bottom, #ffed4d, #ffe99c); animation-delay: 1.5s">
       </div>
       
-      <div class="streamer absolute -top-5 right-1/3" 
+      <div class="absolute streamer -top-5 right-1/3" 
           style="background: linear-gradient(to bottom, #4dffb8, #a5ffde); animation-delay: 2s">
       </div>
       
       <!-- Add firework effect container -->
-      <div class="fixed inset-0 pointer-events-none z-40 overflow-hidden" id="fireworks-container"></div>
-      <div class="fixed inset-0 pointer-events-none z-50 overflow-hidden" id="confetti-container"></div>
+      <div class="fixed inset-0 z-40 overflow-hidden pointer-events-none" id="fireworks-container"></div>
+      <div class="fixed inset-0 z-50 overflow-hidden pointer-events-none" id="confetti-container"></div>
       
       <!-- Star decorations (keep those from before) -->
-      <div class="star absolute top-20 left-20 scale-75"></div>
-      <div class="star absolute bottom-24 right-36 scale-50"></div>
-      <div class="star absolute top-40 right-24"></div>
-      <div class="star absolute bottom-40 left-32 scale-90"></div>
+      <div class="absolute scale-75 star top-20 left-20"></div>
+      <div class="absolute scale-50 star bottom-24 right-36"></div>
+      <div class="absolute star top-40 right-24"></div>
+      <div class="absolute scale-90 star bottom-40 left-32"></div>
       
       <!-- Ribbon decoration in corner -->
-      <div class="ribbon absolute -top-4 -right-4"></div>
+      <div class="absolute ribbon -top-4 -right-4"></div>
       
       <div 
-        class="max-w-md w-full mx-auto relative"
+        class="relative w-full max-w-md mx-auto"
         x-init="init()"
       >
         <div class="relative z-10 transform">
           <!-- Enhanced title with decorative elements -->
-          <h1 class="text-5xl font-fancy text-center mb-4 relative">
+          <h1 class="relative mb-4 text-5xl text-center font-fancy">
             <span class="relative inline-block">
               <span class="absolute inset-0 transform rotate-1">
-                <span class="absolute inset-0 bg-primary-100 rounded-lg opacity-30 blur-md"></span>
+                <span class="absolute inset-0 rounded-lg bg-primary-100 opacity-30 blur-md"></span>
               </span>
               <span class="relative gradient-text drop-shadow-lg min-h-28">Happy Birthday, Yapi!</span>
             
@@ -721,15 +666,15 @@
           </h1>
         
           <!-- Main cake container with improved design -->
-          <div class="relative bg-gradient-to-br from-chocolate-100 to-chocolate-200 p-4 sm:p-6 md:p-10 rounded-2xl shadow-xl border border-chocolate-300 overflow-hidden">
+          <div class="relative p-4 overflow-hidden border shadow-xl bg-gradient-to-br from-chocolate-100 to-chocolate-200 sm:p-6 md:p-10 rounded-2xl border-chocolate-300">
             <!-- Decorative blobs -->
-            <div class="absolute -top-10 -left-10 w-28 h-28 bg-primary-200 rounded-full opacity-40 blur-lg"></div>
-            <div class="absolute -bottom-8 -right-8 w-24 h-24 bg-primary-200 rounded-full opacity-40 blur-lg"></div>
+            <div class="absolute rounded-full -top-10 -left-10 w-28 h-28 bg-primary-200 opacity-40 blur-lg"></div>
+            <div class="absolute w-24 h-24 rounded-full -bottom-8 -right-8 bg-primary-200 opacity-40 blur-lg"></div>
 
             
             <div class="flex flex-col items-center">
               <!-- Cake visualization with pop-in animation -->
-              <div class="relative mb-8 md:mb-12 mt-4 md:mt-8 transform scale-75 sm:scale-90 md:scale-100" style="animation: pop-in 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
+              <div class="relative mt-4 mb-8 transform scale-75 md:mb-12 md:mt-8 sm:scale-90 md:scale-100" style="animation: pop-in 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;">
                 <div class="cake">
                   <div class="plate"></div>
                   <div class="layer layer-bottom"></div>
@@ -763,15 +708,32 @@
                 </div>
               </div>
               
-              <!-- Microphone access and improved instructions -->
-              <div class="text-center mb-4 sm:mb-6 md:mb-8 bg-white bg-opacity-90 p-3 sm:p-4 md:p-6 rounded-xl shadow-lg border-2 border-chocolate-200 w-full max-w-md mx-auto">
+              <!-- Replace the existing birthday message button with this enhanced version -->
+              <div class="flex flex-col items-center space-y-4">
+                <!-- Improved birthday message button -->
+                <button 
+                  @click="playBirthdayMessage" 
+                  class="flex items-center px-8 py-4 font-bold text-white transition-transform duration-300 ease-in-out transform rounded-full shadow-lg btn-3d bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 hover:scale-105"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="relative">
+                    Play Birthday Message
+                    <span class="absolute w-2 h-2 bg-red-500 rounded-full -top-1 -right-1 animate-pulse"></span>
+                  </span>
+                </button>
+
+                <!-- Microphone access and improved instructions -->
+              <div class="w-full max-w-md p-3 mx-auto mb-4 text-center bg-white border-2 shadow-lg sm:mb-6 md:mb-8 bg-opacity-90 sm:p-4 md:p-6 rounded-xl border-chocolate-200">
                 <template x-if="!micAccess">
                   <button 
                     @click="requestMicAccess" 
-                    class="btn-3d bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-bold py-4 px-8 rounded-full mb-4 shadow-lg"
+                    class="px-8 py-4 mb-4 font-bold text-white rounded-full shadow-lg btn-3d bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700"
                   >
                     <span class="flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                       </svg>
                       Start the Celebration
@@ -780,22 +742,22 @@
                 </template>
                 
                 <template x-if="micAccess && !blown">
-                  <div class="text-chocolate-800 rounded-lg p-4 bg-chocolate-100 border border-chocolate-300">
+                  <div class="p-4 border rounded-lg text-chocolate-800 bg-chocolate-100 border-chocolate-300">
                     <p class="mb-2 font-medium">Microphone Ready!</p>
-                    <p class="font-bold text-xl mb-4">Blow into your microphone to blow out the candles 🎂</p>
+                    <p class="mb-4 text-xl font-bold">Blow into your microphone to blow out the candles 🎂</p>
                     
                     <!-- Enhanced blow strength meter -->
-                    <div class="mt-3 relative">
-                      <div class="h-8 w-full bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                    <div class="relative mt-3">
+                      <div class="w-full h-8 overflow-hidden bg-gray-200 rounded-full shadow-inner">
                         <div 
-                          class="h-full bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500 transition-all duration-200 flex items-center justify-end pr-3 text-xs text-white font-bold"
+                          class="flex items-center justify-end h-full pr-3 text-xs font-bold text-white transition-all duration-200 bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500"
                           :style="`width: ${Math.min(blowStrength * 100, 100)}%`"
                           x-text="Math.round(Math.min(blowStrength * 100, 100)) + '%'"
                         ></div>
                       </div>
                       
                       <!-- Blow strength guidance -->
-                      <div class="flex justify-between text-xs text-chocolate-600 mt-1">
+                      <div class="flex justify-between mt-1 text-xs text-chocolate-600">
                         <span>Gentle</span>
                         <span class="font-medium">Blow Harder</span>
                         <span>Strong!</span>
@@ -805,31 +767,14 @@
                 </template>
                 
                 <template x-if="blown">
-                  <div class="text-center py-4">
-                    <p class="text-3xl font-fancy gradient-text font-bold mb-3 animate-pulse">
+                  <div class="py-4 text-center">
+                    <p class="mb-3 text-3xl font-bold font-fancy gradient-text animate-pulse">
                       🎉 Happy Birthday! 🎉
                     </p>
                     <p class="text-chocolate-700">Your wish has been made, Lovee! 🌈</p>
                   </div>
                 </template>
               </div>
-              
-              <!-- Replace the existing birthday message button with this enhanced version -->
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Improved birthday message button -->
-                <button 
-                  @click="playBirthdayMessage" 
-                  class="btn-3d bg-gradient-to-r from-primary-400 to-primary-600 hover:from-primary-500 hover:to-primary-700 text-white font-bold py-4 px-8 rounded-full shadow-lg flex items-center transform transition-transform duration-300 ease-in-out hover:scale-105"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span class="relative">
-                    Play Birthday Message
-                    <span class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                  </span>
-                </button>
                 
                 <!-- Audio controls that show when playing -->
                 <div 
@@ -874,18 +819,18 @@
                   x-transition:leave="transition ease-in duration-200"
                   x-transition:leave-start="opacity-100 transform scale-100"
                   x-transition:leave-end="opacity-0 transform scale-95"
-                  class="w-full max-w-sm p-4 bg-white rounded-xl shadow-md"
+                  class="w-full max-w-sm p-4 bg-white shadow-md rounded-xl"
                 >
                   <!-- Seekable progress bar -->
                   <div class="mb-2">
-                    <div class="flex justify-between text-xs text-chocolate-600 mb-1">
+                    <div class="flex justify-between mb-1 text-xs text-chocolate-600">
                       <span x-text="formatTime(currentTime)"></span>
                       <span x-text="formatTime(duration)"></span>
                     </div>
                     
                     <!-- Seekable progress bar -->
                     <div 
-                      class="h-2 bg-gray-200 rounded-full overflow-hidden relative cursor-pointer" 
+                      class="relative h-2 overflow-hidden bg-gray-200 rounded-full cursor-pointer" 
                       @click="
                         const rect = $el.getBoundingClientRect();
                         const pos = (event.clientX - rect.left) / rect.width;
@@ -894,13 +839,13 @@
                       "
                     >
                       <div 
-                        class="h-2 bg-primary-500 rounded-full"
+                        class="h-2 rounded-full bg-primary-500"
                         :style="`width: ${duration ? (currentTime / duration) * 100 : 0}%`"
                       ></div>
                       
                       <!-- Draggable handle -->
                       <div 
-                        class="absolute top-1/2 -translate-y-1/2 h-4 w-4 bg-primary-600 rounded-full shadow-md transform -translate-x-1/2 hover:scale-110 transition-transform"
+                        class="absolute w-4 h-4 transition-transform transform -translate-x-1/2 -translate-y-1/2 rounded-full shadow-md top-1/2 bg-primary-600 hover:scale-110"
                         :style="`left: ${duration ? (currentTime / duration) * 100 : 0}%`"
                         @mousedown="dragSeek($event)"
                       ></div>
@@ -909,7 +854,7 @@
                   
                   <!-- Volume control -->
                   <div class="flex items-center mt-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-chocolate-600" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-chocolate-600" viewBox="0 0 20 20" fill="currentColor">
                       <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10c0-1.105-.894-2.103-2.343-2.828a1 1 0 010-1.415z" clip-rule="evenodd" />
                     </svg>
                     <input 
@@ -934,22 +879,22 @@
               <div 
                 x-show="blown" 
                 x-transition 
-                class="confetti-container fixed inset-0 pointer-events-none z-50"
+                class="fixed inset-0 z-50 pointer-events-none confetti-container"
               ></div>
             </div>
           </div>
           
           <!-- Decorative ribbon -->
           <div class="relative h-12 mt-10">
-            <div class="absolute left-0 right-0 h-6 bg-gradient-to-r from-primary-300 to-primary-400 transform -skew-x-12 shadow-md"></div>
-            <div class="absolute left-0 right-0 h-6 bg-gradient-to-r from-primary-400 to-primary-500 transform skew-x-12 top-6 shadow-md"></div>
+            <div class="absolute left-0 right-0 h-6 transform -skew-x-12 shadow-md bg-gradient-to-r from-primary-300 to-primary-400"></div>
+            <div class="absolute left-0 right-0 h-6 transform skew-x-12 shadow-md bg-gradient-to-r from-primary-400 to-primary-500 top-6"></div>
           </div>
           
           <!-- Enhanced footer with author credit -->
-          <div class="w-full text-center mt-8 mb-4">
-            <div class="bg-white bg-opacity-70 backdrop-blur-sm rounded-full py-3 px-6 inline-block shadow-md">
-              <p class="text-chocolate-800 text-sm font-medium">
-                Made with <span class="text-red-500 animate-pulse inline-block transform hover:scale-125 transition-transform">❤️</span> by Agassi
+          <div class="w-full mt-8 mb-4 text-center">
+            <div class="inline-block px-6 py-3 bg-white rounded-full shadow-md bg-opacity-70 backdrop-blur-sm">
+              <p class="text-sm font-medium text-chocolate-800">
+                Made with <span class="inline-block text-red-500 transition-transform transform animate-pulse hover:scale-125">❤️</span> by Agassi
               </p>
             </div>
           </div>
